@@ -15,6 +15,9 @@ import UploadDialog from '../components/UploadDialog';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
 import { ipcRenderer } from 'electron';
+import path from 'path';
+import os from 'os';
+import fs from 'fs';
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
@@ -136,21 +139,43 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
     setIsUploading(true);
     setUploadProgress(0);
 
-    // 模拟上传进度
-    for (let i = 0; i <= 100; i += 10) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      setUploadProgress(i);
+    try {
+      const userId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
+      
+      // 将文件保存到临时目录
+      const tempFiles = await Promise.all(files.map(async (file) => {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const tempPath = path.join(os.tmpdir(), file.name);
+        fs.writeFileSync(tempPath, buffer);
+        return tempPath;
+      }));
+
+      // 调用主进程导入截图
+      const importedScreenshots = await ipcRenderer.invoke('import-screenshots', {
+        gameId,
+        userId,
+        files: tempFiles
+      });
+
+      // 清理临时文件
+      tempFiles.forEach(tempPath => {
+        try {
+          fs.unlinkSync(tempPath);
+        } catch (error) {
+          console.error('Error deleting temp file:', error);
+        }
+      });
+
+      // 更新截图列表
+      setScreenshots([...importedScreenshots, ...screenshots]);
+      setError(null);
+    } catch (error) {
+      console.error('Error importing screenshots:', error);
+      setError('导入截图时出错');
+    } finally {
+      setIsUploading(false);
     }
-
-    // 模拟添加新截图
-    const newScreenshots = files.map((file, index) => ({
-      id: `new-${index}`,
-      url: URL.createObjectURL(file),
-      timestamp: new Date().toISOString(),
-    }));
-
-    setScreenshots([...newScreenshots, ...screenshots]);
-    setIsUploading(false);
   };
 
   return (
