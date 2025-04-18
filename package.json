@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A Steam-like screenshot manager",
   "main": "dist/main/main.js",
+  "type": "commonjs",
   "scripts": {
     "start": "electron .",
     "build": "npm run build:main && npm run build:renderer",
@@ -21,7 +22,7 @@
     "@mui/material": "^5.15.14",
     "electron": "^29.1.5",
     "electron-builder": "^24.13.3",
-    "electron-store": "^10.0.1",
+    "electron-store": "^8.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.3"
@@ -32,6 +33,7 @@
     "@types/react-dom": "^18.2.22",
     "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^6.10.0",
+    "path-browserify": "^1.0.1",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.2",

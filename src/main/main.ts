@@ -1,7 +1,32 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron';
-import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const Store = require('electron-store');
+
+interface AppSettings {
+  themeMode: 'light' | 'dark' | 'system';
+  language: 'zh' | 'en';
+  steamPath: string;
+}
+
+interface RenderProcessGoneDetails {
+  reason: string;
+  exitCode: number;
+}
+
+// 创建配置存储实例
+const store = new Store({
+  defaults: {
+    themeMode: 'system',
+    language: 'en',
+    steamPath: process.platform === 'darwin'
+      ? '~/Library/Application Support/Steam'
+      : process.platform === 'win32'
+        ? 'C:\\Program Files (x86)\\Steam'
+        : '~/.local/share/Steam'
+  }
+});
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -17,10 +42,35 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
   
   // 开发环境下打开开发者工具
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
+  mainWindow.webContents.openDevTools();
+
+  // 监听渲染进程错误
+  mainWindow.webContents.on('render-process-gone', (event: Electron.Event, details: RenderProcessGoneDetails) => {
+    console.error('Renderer process gone:', details);
+  });
+
+  mainWindow.webContents.on('crashed', () => {
+    console.error('Renderer process crashed');
+  });
 }
+
+// 获取配置值
+ipcMain.handle('get-store-value', (_: any, key: keyof AppSettings) => {
+  if (key === 'language') {
+    const language = store.get(key);
+    // 确保返回的语言值是 'zh' 或 'en'
+    if (typeof language === 'string') {
+      return language.startsWith('zh') ? 'zh' : 'en';
+    }
+    return 'en';
+  }
+  return store.get(key);
+});
+
+// 设置配置值
+ipcMain.on('set-store-value', (_: any, { key, value }: { key: keyof AppSettings; value: AppSettings[keyof AppSettings] }) => {
+  store.set(key, value);
+});
 
 // 处理打开文件夹对话框的请求
 ipcMain.handle('open-directory-dialog', async () => {
@@ -33,14 +83,13 @@ ipcMain.handle('open-directory-dialog', async () => {
 });
 
 // 验证 Steam 安装路径
-ipcMain.handle('validate-steam-path', async (_, steamPath: string) => {
+ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
   try {
     // 检查路径是否存在
     if (!fs.existsSync(steamPath)) {
       return false;
     }
 
-    // 检查是否是 Steam 安装路径
     const platform = process.platform;
     
     if (platform === 'darwin') {
@@ -50,17 +99,16 @@ ipcMain.handle('validate-steam-path', async (_, steamPath: string) => {
                        fs.existsSync(path.join(steamPath, 'userdata'));
       
       // 检查是否是 Steam 应用程序
-      const isAppDir = steamPath.endsWith('Steam.app') && 
+      const isAppDir = steamPath.endsWith('Steam.app') &&
                       fs.existsSync(path.join(steamPath, 'Contents', 'MacOS', 'steam'));
       
       return isDataDir || isAppDir;
     } else {
-      // Windows 和 Linux 的验证逻辑
       const requiredFiles = {
         win32: ['steam.exe', 'steamapps'],
         linux: ['steam', 'steamapps']
       };
-
+      
       const files = requiredFiles[platform as keyof typeof requiredFiles];
       if (!files) return false;
 

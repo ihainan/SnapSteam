@@ -5,17 +5,21 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
 
-const GameCard = styled(Card)(() => ({
-  backgroundColor: '#ffffff',
-  color: '#2c3e50',
+const GameCard = styled(Card)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
+  color: theme.palette.text.primary,
   transition: 'all 0.2s ease',
   position: 'relative',
   borderRadius: '8px',
   overflow: 'hidden',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 1px 3px rgba(0,0,0,0.2)'
+    : '0 1px 3px rgba(0,0,0,0.1)',
   '&:hover': {
     transform: 'translateY(-2px)',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 4px 6px rgba(0,0,0,0.3)'
+      : '0 4px 6px rgba(0,0,0,0.1)',
     cursor: 'pointer',
     '& .MuiCardMedia-root': {
       filter: 'brightness(1.05)',
@@ -37,7 +41,7 @@ const GameTitle = styled(Typography)(() => ({
 }));
 
 interface FavoriteButtonProps {
-  favorite: boolean;
+  favorite: string;
 }
 
 const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
@@ -51,27 +55,27 @@ const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
   height: '32px',
   borderRadius: '50%',
   backdropFilter: 'blur(8px)',
-  backgroundColor: favorite ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-  border: `1px solid ${favorite ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
-  color: favorite ? '#ef4444' : '#ffffff',
+  backgroundColor: favorite === 'true' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+  border: `1px solid ${favorite === 'true' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
+  color: favorite === 'true' ? '#ef4444' : '#ffffff',
   opacity: 0.9,
   transition: 'all 0.2s ease',
   '&:hover': {
     opacity: 1,
-    backgroundColor: favorite ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.2)',
-    border: `1px solid ${favorite ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.5)'}`,
+    backgroundColor: favorite === 'true' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+    border: `1px solid ${favorite === 'true' ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.5)'}`,
     transform: 'scale(1.05)',
   },
 }));
 
-const SectionTitle = styled(Typography)(() => ({
-  color: '#2c3e50',
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.primary,
   fontSize: '16px',
   fontWeight: 600,
   marginBottom: '12px',
   paddingBottom: '4px',
   paddingLeft: '8px',
-  borderBottom: '1px solid #e0e0e0',
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 const Section = styled(Box)(() => ({
@@ -88,16 +92,18 @@ const GamesGrid = styled(Box)(() => ({
   padding: '0 8px',
 }));
 
-const EmptyFavorites = styled(Box)(() => ({
+const EmptyFavorites = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
   padding: '32px',
-  color: '#64748b',
-  backgroundColor: '#ffffff',
+  color: theme.palette.text.secondary,
+  backgroundColor: theme.palette.background.paper,
   borderRadius: '8px',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 1px 3px rgba(0,0,0,0.2)'
+    : '0 1px 3px rgba(0,0,0,0.1)',
   '& .MuiSvgIcon-root': {
     fontSize: 48,
     marginBottom: 16,
@@ -105,11 +111,12 @@ const EmptyFavorites = styled(Box)(() => ({
   },
 }));
 
-const EmptyText = styled(Typography)(() => ({
+const EmptyText = styled(Typography)(({ theme }) => ({
   fontSize: '14px',
   textAlign: 'center',
   lineHeight: 1.5,
-  color: '#64748b',
+  color: theme.palette.text.secondary,
+  whiteSpace: 'pre-line',
 }));
 
 // 模拟游戏数据
@@ -206,8 +213,8 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
         alt={game.name}
       />
       <GameTitle>{game.name}</GameTitle>
-      <FavoriteButton 
-        favorite={game.favorite}
+      <FavoriteButton
+        favorite={game.favorite.toString()}
         onClick={(e) => handleFavoriteClick(e, game.id)}
       >
         <FavoriteIcon sx={{ fontSize: 18 }} />

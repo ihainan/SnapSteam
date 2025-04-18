@@ -15,6 +15,9 @@ module.exports = {
             loader: 'ts-loader',
             options: {
               transpileOnly: true,
+              compilerOptions: {
+                module: 'commonjs'
+              }
             },
           },
         ],
@@ -28,6 +31,11 @@ module.exports = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
+    fallback: {
+      path: require.resolve('path-browserify'),
+      fs: false,
+      os: false
+    }
   },
   output: {
     filename: 'bundle.js',

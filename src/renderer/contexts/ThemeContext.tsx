@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material';
+import { ipcRenderer } from 'electron';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -75,6 +76,18 @@ const darkTheme = createTheme({
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [themeMode, setThemeMode] = useState<ThemeMode>('system');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+
+  // 从主进程加载保存的主题配置
+  useEffect(() => {
+    const loadTheme = async () => {
+      const savedTheme = await ipcRenderer.invoke('get-store-value', 'themeMode');
+      if (savedTheme) {
+        setThemeMode(savedTheme);
+      }
+    };
+    
+    loadTheme();
+  }, []);
 
   useEffect(() => {
     if (themeMode === 'system') {

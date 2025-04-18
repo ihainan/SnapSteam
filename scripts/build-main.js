@@ -9,7 +9,7 @@ if (!fs.existsSync(distDir)) {
 }
 
 // 编译主进程代码
-exec('tsc src/main/main.ts --outDir dist/main --esModuleInterop true', (error, stdout, stderr) => {
+exec('tsc --project tsconfig.json', (error, stdout, stderr) => {
   if (error) {
     console.error(`编译错误: ${error}`);
     return;

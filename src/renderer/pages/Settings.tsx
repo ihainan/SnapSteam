@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Alert } from '@mui/material';
 import { Folder } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
@@ -71,17 +71,36 @@ const Settings: React.FC = () => {
   const [steamPath, setSteamPath] = useState(defaultSteamPath);
   const [pathError, setPathError] = useState<string | null>(null);
 
+  // 从主进程加载保存的配置
+  useEffect(() => {
+    const loadSettings = async () => {
+      const savedTheme = await ipcRenderer.invoke('get-store-value', 'themeMode');
+      const savedLanguage = await ipcRenderer.invoke('get-store-value', 'language');
+      const savedSteamPath = await ipcRenderer.invoke('get-store-value', 'steamPath');
+      
+      if (savedTheme) setThemeMode(savedTheme);
+      if (savedLanguage) setLanguage(savedLanguage);
+      if (savedSteamPath) setSteamPath(savedSteamPath);
+    };
+    
+    loadSettings();
+  }, []);
+
   const handlePathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSteamPath(event.target.value);
     setPathError(null);
   };
 
   const handleThemeChange = (event: SelectChangeEvent) => {
-    setThemeMode(event.target.value as 'light' | 'dark' | 'system');
+    const newTheme = event.target.value as 'light' | 'dark' | 'system';
+    setThemeMode(newTheme);
+    ipcRenderer.send('set-store-value', { key: 'themeMode', value: newTheme });
   };
 
   const handleLanguageChange = (event: SelectChangeEvent) => {
-    setLanguage(event.target.value as 'zh' | 'en');
+    const newLanguage = event.target.value as 'zh' | 'en';
+    setLanguage(newLanguage);
+    ipcRenderer.send('set-store-value', { key: 'language', value: newLanguage });
   };
 
   const handleBrowse = async () => {
@@ -94,6 +113,7 @@ const Settings: React.FC = () => {
         if (isValid) {
           setSteamPath(selectedPath);
           setPathError(null);
+          ipcRenderer.send('set-store-value', { key: 'steamPath', value: selectedPath });
         } else {
           setPathError('选择的路径不是有效的 Steam 安装路径');
         }
