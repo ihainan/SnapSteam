@@ -106,10 +106,12 @@ const App: React.FC = () => {
             color: '#333333',
             borderRight: '1px solid #e0e0e0',
             paddingTop: '8px',
+            display: 'flex',
+            flexDirection: 'column',
           },
         }}
       >
-        <List>
+        <List sx={{ flex: 1 }}>
           {menuItems.map((item) => (
             <ListItemButton
               key={item.text}
@@ -163,6 +165,72 @@ const App: React.FC = () => {
             </ListItemButton>
           ))}
         </List>
+
+        {location.pathname === '/' && (
+          <Box
+            sx={{
+              borderTop: '1px solid #e0e0e0',
+              padding: '8px',
+            }}
+          >
+            <ListItemButton
+              onClick={handleUserMenuClick}
+              sx={{
+                borderRadius: '4px',
+                padding: '6px 12px',
+                '&:hover': {
+                  backgroundColor: 'rgba(66, 133, 244, 0.08)',
+                },
+              }}
+            >
+              <Avatar
+                sx={{
+                  width: 24,
+                  height: 24,
+                  backgroundColor: '#4285f4',
+                  fontSize: '13px',
+                  marginRight: '12px',
+                }}
+              >
+                {currentUser.name[0]}
+              </Avatar>
+              <ListItemText
+                primary={currentUser.name}
+                sx={{
+                  '& .MuiListItemText-primary': {
+                    fontSize: '13px',
+                    color: '#333333',
+                  },
+                }}
+              />
+            </ListItemButton>
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleUserMenuClose}
+              PaperProps={{
+                sx: {
+                  minWidth: '120px',
+                  marginTop: '4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }
+              }}
+            >
+              {mockUsers.map((user) => (
+                <MenuItem
+                  key={user.id}
+                  onClick={() => handleUserChange(user)}
+                  sx={{
+                    fontSize: '13px',
+                    padding: '8px 16px',
+                  }}
+                >
+                  {user.name}
+                </MenuItem>
+              ))}
+            </Menu>
+          </Box>
+        )}
       </Drawer>
 
       <Box
@@ -195,49 +263,6 @@ const App: React.FC = () => {
                 onChange={handleSearchChange}
               />
             </SearchBox>
-            
-            <IconButton
-              onClick={handleUserMenuClick}
-              size="small"
-              sx={{ padding: 0 }}
-            >
-              <Avatar
-                sx={{
-                  width: 32,
-                  height: 32,
-                  backgroundColor: '#4285f4',
-                  fontSize: '14px',
-                }}
-              >
-                {currentUser.name[0]}
-              </Avatar>
-            </IconButton>
-            
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleUserMenuClose}
-              PaperProps={{
-                sx: {
-                  minWidth: '120px',
-                  marginTop: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                }
-              }}
-            >
-              {mockUsers.map((user) => (
-                <MenuItem
-                  key={user.id}
-                  onClick={() => handleUserChange(user)}
-                  sx={{
-                    fontSize: '13px',
-                    padding: '8px 16px',
-                  }}
-                >
-                  {user.name}
-                </MenuItem>
-              ))}
-            </Menu>
           </Box>
         )}
 
