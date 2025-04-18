@@ -10,6 +10,8 @@ import {
   LinearProgress,
   styled,
   Paper,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import { Add as AddIcon, PhotoLibrary as PhotoLibraryIcon } from '@mui/icons-material';
 import UploadDialog from '../components/UploadDialog';
@@ -133,6 +135,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showRestartAlert, setShowRestartAlert] = useState(false);
 
   const t = translations[language];
 
@@ -209,6 +212,8 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       // 更新截图列表
       setScreenshots([...importedScreenshots, ...screenshots]);
       setError(null);
+      // 显示重启提示
+      setShowRestartAlert(true);
     } catch (error) {
       console.error('Error importing screenshots:', error);
       setError('导入截图时出错');
@@ -296,6 +301,31 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
           ))}
         </Grid>
       )}
+
+      <Snackbar
+        open={showRestartAlert}
+        autoHideDuration={6000}
+        onClose={() => setShowRestartAlert(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          onClose={() => setShowRestartAlert(false)}
+          severity="info"
+          variant="filled"
+          sx={{
+            backgroundColor: theme => theme.palette.mode === 'dark' 
+              ? 'rgba(96, 165, 250, 0.9)' 
+              : 'rgba(59, 130, 246, 0.9)',
+            color: '#ffffff',
+            borderRadius: '8px',
+            boxShadow: theme => theme.palette.mode === 'dark' 
+              ? '0 4px 6px rgba(0,0,0,0.2)' 
+              : '0 4px 6px rgba(0,0,0,0.1)',
+          }}
+        >
+          {t.screenshotManager.restartSteam}
+        </Alert>
+      </Snackbar>
 
       <UploadDialog
         open={isUploadDialogOpen}

@@ -34,7 +34,8 @@ export const translations = {
       cancel: '取消',
       import: '导入截图',
       uploading: '上传中...',
-      title: '截图'
+      title: '截图',
+      restartSteam: '截图已成功导入！请重启 Steam 客户端以使更改生效。'
     }
   },
   en: {
@@ -72,7 +73,8 @@ export const translations = {
       cancel: 'Cancel',
       import: 'Import Screenshots',
       uploading: 'Uploading...',
-      title: 'Screenshots'
+      title: 'Screenshots',
+      restartSteam: 'Screenshots imported successfully! Please restart Steam client for the changes to take effect.'
     }
   }
 }; 
