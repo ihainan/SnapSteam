@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, TextField, Typography, Button } from '@mui/material';
+import { Box, TextField, Typography, Button, styled } from '@mui/material';
 import { Folder } from '@mui/icons-material';
 
 const defaultSteamPath = process.platform === 'darwin' 
@@ -7,6 +7,53 @@ const defaultSteamPath = process.platform === 'darwin'
   : process.platform === 'win32'
   ? 'C:\\Program Files (x86)\\Steam'
   : '~/.local/share/Steam';
+
+const SectionTitle = styled(Typography)(() => ({
+  color: '#ffffff',
+  fontSize: '24px',
+  fontWeight: 500,
+  marginBottom: '16px',
+  paddingBottom: '8px',
+  borderBottom: '1px solid rgba(255,255,255,0.1)',
+}));
+
+const SubTitle = styled(Typography)(() => ({
+  color: '#959da6',
+  fontSize: '14px',
+  marginBottom: '12px',
+}));
+
+const StyledTextField = styled(TextField)(() => ({
+  '& .MuiOutlinedInput-root': {
+    color: '#ffffff',
+    backgroundColor: '#2a475e',
+    '& fieldset': {
+      borderColor: 'rgba(255,255,255,0.1)',
+    },
+    '&:hover fieldset': {
+      borderColor: '#66c0f4',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#66c0f4',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: '#959da6',
+    '&.Mui-focused': {
+      color: '#66c0f4',
+    },
+  },
+}));
+
+const StyledButton = styled(Button)(() => ({
+  backgroundColor: '#2a475e',
+  color: '#ffffff',
+  padding: '6px 16px',
+  textTransform: 'none',
+  '&:hover': {
+    backgroundColor: '#66c0f4',
+  },
+}));
 
 const Settings: React.FC = () => {
   const [steamPath, setSteamPath] = useState(defaultSteamPath);
@@ -22,54 +69,28 @@ const Settings: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 4, color: '#ffffff' }}>
-        Settings
-      </Typography>
+      <SectionTitle>Settings</SectionTitle>
 
-      <Box sx={{ maxWidth: 600 }}>
-        <Typography variant="h6" sx={{ mb: 2, color: '#ffffff' }}>
+      <Box sx={{ maxWidth: 800 }}>
+        <SubTitle>
           Steam Installation
-        </Typography>
+        </SubTitle>
         
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <TextField
+          <StyledTextField
             fullWidth
-            label="Steam Path"
-            variant="outlined"
+            size="small"
+            placeholder="Steam installation path"
             value={steamPath}
             onChange={handlePathChange}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                color: '#ffffff',
-                '& fieldset': {
-                  borderColor: '#66c0f4',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#66c0f4',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#66c0f4',
-                },
-              },
-              '& .MuiInputLabel-root': {
-                color: '#ffffff',
-              },
-            }}
           />
-          <Button
+          <StyledButton
             variant="contained"
             onClick={handleBrowse}
             startIcon={<Folder />}
-            sx={{
-              backgroundColor: '#66c0f4',
-              '&:hover': {
-                backgroundColor: '#66c0f4',
-                opacity: 0.8,
-              },
-            }}
           >
             Browse
-          </Button>
+          </StyledButton>
         </Box>
       </Box>
     </Box>

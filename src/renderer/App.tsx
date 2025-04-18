@@ -5,13 +5,13 @@ import { LibraryBooks, Settings } from '@mui/icons-material';
 import Library from './pages/Library';
 import SettingsPage from './pages/Settings';
 
-const drawerWidth = 240;
+const drawerWidth = 200;
 
 const MainContent = styled(Box)(() => ({
   marginLeft: drawerWidth,
-  padding: '20px',
   backgroundColor: '#1b2838',
   minHeight: '100vh',
+  padding: '16px',
 }));
 
 const StyledDrawer = styled(Drawer)(() => ({
@@ -20,9 +20,45 @@ const StyledDrawer = styled(Drawer)(() => ({
   '& .MuiDrawer-paper': {
     width: drawerWidth,
     boxSizing: 'border-box',
-    backgroundColor: '#2a475e',
-    color: '#ffffff',
+    backgroundColor: '#1b2838',
+    color: '#959da6',
     borderRight: 'none',
+    paddingTop: '12px',
+  },
+}));
+
+const StyledListItemButton = styled(ListItemButton)(() => ({
+  padding: '8px 16px',
+  margin: '2px 8px',
+  borderRadius: '3px',
+  '&.Mui-selected': {
+    backgroundColor: '#2f89bc',
+    color: '#ffffff',
+    '&:hover': {
+      backgroundColor: '#2f89bc',
+    },
+    '& .MuiListItemIcon-root': {
+      color: '#ffffff',
+    },
+  },
+  '&:hover': {
+    backgroundColor: '#2f89bc',
+    opacity: 0.8,
+    color: '#ffffff',
+    '& .MuiListItemIcon-root': {
+      color: '#ffffff',
+    },
+  },
+}));
+
+const StyledListItemIcon = styled(ListItemIcon)(() => ({
+  color: '#959da6',
+  minWidth: '36px',
+}));
+
+const StyledListItemText = styled(ListItemText)(() => ({
+  '& .MuiListItemText-primary': {
+    fontSize: '14px',
   },
 }));
 
@@ -40,26 +76,14 @@ const App: React.FC = () => {
       <StyledDrawer variant="permanent" anchor="left">
         <List>
           {menuItems.map((item) => (
-            <ListItemButton
+            <StyledListItemButton
               key={item.text}
               onClick={() => navigate(item.path)}
               selected={location.pathname === item.path}
-              sx={{
-                '&.Mui-selected': {
-                  backgroundColor: '#66c0f4',
-                  '&:hover': {
-                    backgroundColor: '#66c0f4',
-                  },
-                },
-                '&:hover': {
-                  backgroundColor: '#66c0f4',
-                  opacity: 0.8,
-                },
-              }}
             >
-              <ListItemIcon sx={{ color: '#ffffff' }}>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
+              <StyledListItemIcon>{item.icon}</StyledListItemIcon>
+              <StyledListItemText primary={item.text} />
+            </StyledListItemButton>
           ))}
         </List>
       </StyledDrawer>
