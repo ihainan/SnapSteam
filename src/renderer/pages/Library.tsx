@@ -182,7 +182,12 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
   
   // 获取最近游玩的游戏（按 lastPlayed 时间倒序排序）
   const recentlyPlayed = [...filteredGames]
-    .filter(game => game.lastPlayed && game.lastPlayed > 0)
+    .filter(game => {
+      if (!game.lastPlayed || game.lastPlayed <= 0) return false;
+      // 计算三个月前的时间戳（以秒为单位）
+      const threeMonthsAgo = Math.floor(Date.now() / 1000) - (90 * 24 * 60 * 60);
+      return game.lastPlayed >= threeMonthsAgo;
+    })
     .sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0))
     .slice(0, 3);
 
