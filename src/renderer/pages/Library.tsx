@@ -47,12 +47,18 @@ const SectionTitle = styled(Typography)(() => ({
   fontWeight: 500,
   marginBottom: '8px',
   paddingBottom: '4px',
-  paddingLeft: '4px',
+  paddingLeft: '8px',
   borderBottom: '1px solid rgba(255,255,255,0.1)',
 }));
 
 const GridContainer = styled(Grid)(() => ({
-  marginLeft: '-4px',
+  marginLeft: '0',
+  width: '100%',
+  padding: '0 8px',
+}));
+
+const ContentWrapper = styled(Box)(() => ({
+  marginLeft: '-8px',
   width: 'calc(100% + 8px)',
 }));
 
@@ -113,7 +119,7 @@ const Library: React.FC = () => {
   const allGames = mockGames;
 
   return (
-    <Box>
+    <ContentWrapper>
       <Box sx={{ mb: 2 }}>
         <SectionTitle>Favorites</SectionTitle>
         <GridContainer container spacing={1}>
@@ -161,7 +167,7 @@ const Library: React.FC = () => {
           ))}
         </GridContainer>
       </Box>
-    </Box>
+    </ContentWrapper>
   );
 };
 

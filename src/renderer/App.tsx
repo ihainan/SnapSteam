@@ -11,7 +11,7 @@ const MainContent = styled(Box)(() => ({
   marginLeft: drawerWidth,
   backgroundColor: '#1b2838',
   minHeight: '100vh',
-  padding: '8px 8px 8px 4px',
+  padding: '8px 8px 8px 0',
 }));
 
 const StyledDrawer = styled(Drawer)(() => ({
