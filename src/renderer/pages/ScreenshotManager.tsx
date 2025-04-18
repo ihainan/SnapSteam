@@ -10,6 +10,7 @@ import {
   styled,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
+import UploadDialog from '../components/UploadDialog';
 
 // 使用实际截图数据
 const mockScreenshots = [
@@ -98,15 +99,15 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   const [screenshots, setScreenshots] = useState(mockScreenshots);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   const handleScreenshotClick = (url: string) => {
     // 使用系统图片浏览器打开
     window.open(url, '_blank');
   };
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  const handleUpload = async (files: File[]) => {
+    if (files.length === 0) return;
 
     setIsUploading(true);
     setUploadProgress(0);
@@ -118,7 +119,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
     }
 
     // 模拟添加新截图
-    const newScreenshots = Array.from(files).map((file, index) => ({
+    const newScreenshots = files.map((file, index) => ({
       id: screenshots.length + index + 1,
       url: URL.createObjectURL(file),
       timestamp: new Date().toISOString(),
@@ -126,9 +127,6 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
 
     setScreenshots([...newScreenshots, ...screenshots]);
     setIsUploading(false);
-    
-    // 重置文件输入，以便可以再次选择相同的文件
-    event.target.value = '';
   };
 
   return (
@@ -136,24 +134,14 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <SectionTitle>{gameName} - 截图</SectionTitle>
         <Box>
-          <input
-            accept="image/*"
-            style={{ display: 'none' }}
-            id="screenshot-upload"
-            multiple
-            type="file"
-            onChange={handleUpload}
-          />
-          <label htmlFor="screenshot-upload">
-            <UploadButton
-              variant="contained"
-              startIcon={<AddIcon />}
-              disabled={isUploading}
-              component="span"
-            >
-              添加截图
-            </UploadButton>
-          </label>
+          <UploadButton
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setIsUploadDialogOpen(true)}
+            disabled={isUploading}
+          >
+            添加截图
+          </UploadButton>
         </Box>
       </Box>
 
@@ -178,6 +166,12 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
           </Grid>
         ))}
       </Grid>
+
+      <UploadDialog
+        open={isUploadDialogOpen}
+        onClose={() => setIsUploadDialogOpen(false)}
+        onUpload={handleUpload}
+      />
     </Box>
   );
 };
