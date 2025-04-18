@@ -61,7 +61,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setLanguage = async (newLanguage: Language) => {
     try {
-      await ipcRenderer.send('set-store-value', { key: 'language', value: newLanguage });
+      await ipcRenderer.invoke('set-store-value', { key: 'language', value: newLanguage });
       setLanguageState(newLanguage);
     } catch (error) {
       console.error('Failed to set language:', error);

@@ -89,7 +89,7 @@ const Settings: React.FC = () => {
     };
     
     loadSettings();
-  }, []);
+  }, [setThemeMode, setLanguage]);
 
   const handlePathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSteamPath(event.target.value);

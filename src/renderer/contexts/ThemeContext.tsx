@@ -74,7 +74,7 @@ const darkTheme = createTheme({
 });
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [themeMode, setThemeMode] = useState<ThemeMode>('system');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
   // 从主进程加载保存的主题配置
@@ -82,7 +82,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const loadTheme = async () => {
       const savedTheme = await ipcRenderer.invoke('get-store-value', 'themeMode');
       if (savedTheme) {
-        setThemeMode(savedTheme);
+        setThemeModeState(savedTheme);
       }
     };
     
@@ -111,6 +111,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [resolvedTheme]);
 
   const theme = resolvedTheme === 'dark' ? darkTheme : lightTheme;
+
+  const setThemeMode = async (newTheme: ThemeMode) => {
+    try {
+      await ipcRenderer.invoke('set-store-value', { key: 'themeMode', value: newTheme });
+      setThemeModeState(newTheme);
+    } catch (error) {
+      console.error('Failed to set theme:', error);
+    }
+  };
 
   return (
     <ThemeContext.Provider value={{ themeMode, setThemeMode }}>
