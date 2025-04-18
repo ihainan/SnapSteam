@@ -49,9 +49,15 @@ const StyledButton = styled(Button)(() => ({
   backgroundColor: '#4285f4',
   color: '#ffffff',
   padding: '6px 16px',
+  height: '40px',
+  minWidth: '100px',
+  whiteSpace: 'nowrap',
   textTransform: 'none',
   '&:hover': {
     backgroundColor: '#3367d6',
+  },
+  '& .MuiButton-startIcon': {
+    marginRight: '4px',
   },
 }));
 
