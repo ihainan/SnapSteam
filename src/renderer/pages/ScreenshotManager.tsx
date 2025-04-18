@@ -109,7 +109,12 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
           setError('未找到游戏截图');
         }
         
-        setScreenshots(gameScreenshots);
+        // 按时间倒序排序
+        const sortedScreenshots = [...gameScreenshots].sort((a, b) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+        
+        setScreenshots(sortedScreenshots);
       } catch (error) {
         console.error('Error loading screenshots:', error);
         setError('加载截图时出错');
@@ -151,7 +156,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <SectionTitle>{gameName} - {t.screenshotManager.addScreenshot}</SectionTitle>
+        <SectionTitle>{gameName} - {t.screenshotManager.title}</SectionTitle>
         <Box>
           <UploadButton
             variant="contained"

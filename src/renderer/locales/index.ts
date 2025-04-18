@@ -28,7 +28,8 @@ export const translations = {
       orClick: '或者点击选择图片',
       cancel: '取消',
       import: '导入截图',
-      uploading: '上传中...'
+      uploading: '上传中...',
+      title: '截图'
     }
   },
   en: {
@@ -60,7 +61,8 @@ export const translations = {
       orClick: 'or click to select images',
       cancel: 'Cancel',
       import: 'Import Screenshots',
-      uploading: 'Uploading...'
+      uploading: 'Uploading...',
+      title: 'Screenshots'
     }
   }
 }; 
