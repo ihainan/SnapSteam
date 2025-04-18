@@ -62,10 +62,32 @@ const UploadButton = styled(Button)(() => ({
   color: '#ffffff',
   padding: '8px 16px',
   textTransform: 'none',
+  borderRadius: '4px',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+  transition: 'all 0.2s ease',
+  fontSize: '13px',
+  fontWeight: 500,
   '&:hover': {
     backgroundColor: '#3367d6',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+    transform: 'translateY(-1px)',
   },
-}));
+  '&:active': {
+    transform: 'translateY(0)',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+  },
+  '&.Mui-disabled': {
+    backgroundColor: '#e0e0e0',
+    color: '#9e9e9e',
+    boxShadow: 'none',
+  },
+  '& .MuiButton-startIcon': {
+    marginRight: '6px',
+    '& .MuiSvgIcon-root': {
+      fontSize: '18px',
+    },
+  },
+})) as typeof Button;
 
 interface ScreenshotManagerProps {
   gameId: number;
@@ -104,6 +126,9 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
 
     setScreenshots([...newScreenshots, ...screenshots]);
     setIsUploading(false);
+    
+    // 重置文件输入，以便可以再次选择相同的文件
+    event.target.value = '';
   };
 
   return (
@@ -124,6 +149,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
               variant="contained"
               startIcon={<AddIcon />}
               disabled={isUploading}
+              component="span"
             >
               添加截图
             </UploadButton>
