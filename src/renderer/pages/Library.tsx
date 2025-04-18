@@ -4,6 +4,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
+import { ipcRenderer } from 'electron';
 
 const GameCard = styled(Card)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
@@ -119,20 +120,18 @@ const EmptyText = styled(Typography)(({ theme }) => ({
   whiteSpace: 'pre-line',
 }));
 
+interface Game {
+  id: number;
+  name: string;
+  coverUrl: string;
+  favorite: boolean;
+  userId: number;
+}
+
 interface LibraryProps {
   searchTerm: string;
-  games: {
-    id: number;
-    name: string;
-    coverUrl: string;
-    favorite: boolean;
-  }[];
-  setGames: React.Dispatch<React.SetStateAction<{
-    id: number;
-    name: string;
-    coverUrl: string;
-    favorite: boolean;
-  }[]>>;
+  games: Game[];
+  setGames: React.Dispatch<React.SetStateAction<Game[]>>;
 }
 
 const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
@@ -152,15 +151,26 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
     navigate(`/screenshots/${gameId}`);
   };
 
-  const handleFavoriteClick = (event: React.MouseEvent, gameId: number) => {
+  const handleFavoriteClick = async (event: React.MouseEvent, gameId: number) => {
     event.stopPropagation(); // 阻止事件冒泡到卡片
-    setGames(prevGames =>
-      prevGames.map(game =>
-        game.id === gameId
-          ? { ...game, favorite: !game.favorite }
-          : game
-      )
+    
+    // 更新本地状态
+    const updatedGames = games.map(game =>
+      game.id === gameId
+        ? { ...game, favorite: !game.favorite }
+        : game
     );
+    
+    setGames(updatedGames);
+    
+    // 立即保存到持久化存储
+    const userId = games[0]?.userId; // 获取当前用户 ID
+    if (userId) {
+      await ipcRenderer.send('set-store-value', { 
+        key: `userGames_${userId}`, 
+        value: updatedGames 
+      });
+    }
   };
 
   const renderGameCard = (game: typeof games[0]) => (

@@ -40,23 +40,24 @@ interface Game {
   name: string;
   coverUrl: string;
   favorite: boolean;
+  userId: number;  // 添加用户 ID 字段
 }
 
 const mockGames: Record<number, Game[]> = {
   1: [
-    { id: 1, name: "Half-Life 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/220/header.jpg", favorite: true },
-    { id: 2, name: "Portal 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg", favorite: false },
-    { id: 3, name: "Team Fortress 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg", favorite: true },
+    { id: 1, name: "Half-Life 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/220/header.jpg", favorite: true, userId: 1 },
+    { id: 2, name: "Portal 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg", favorite: false, userId: 1 },
+    { id: 3, name: "Team Fortress 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg", favorite: true, userId: 1 },
   ],
   2: [
-    { id: 4, name: "Counter-Strike 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg", favorite: true },
-    { id: 5, name: "Dota 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg", favorite: false },
-    { id: 6, name: "Left 4 Dead 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/550/header.jpg", favorite: true },
+    { id: 4, name: "Counter-Strike 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg", favorite: true, userId: 2 },
+    { id: 5, name: "Dota 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg", favorite: false, userId: 2 },
+    { id: 6, name: "Left 4 Dead 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/550/header.jpg", favorite: true, userId: 2 },
   ],
   3: [
-    { id: 7, name: "Grand Theft Auto V", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg", favorite: true },
-    { id: 8, name: "The Witcher 3", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg", favorite: false },
-    { id: 9, name: "Red Dead Redemption 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg", favorite: true },
+    { id: 7, name: "Grand Theft Auto V", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg", favorite: true, userId: 3 },
+    { id: 8, name: "The Witcher 3", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg", favorite: false, userId: 3 },
+    { id: 9, name: "Red Dead Redemption 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg", favorite: true, userId: 3 },
   ],
 };
 
@@ -147,22 +148,30 @@ const App: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentUser, setCurrentUser] = useState(mockUsers[0]);
   const [error, setError] = useState<string | null>(null);
-  const [games, setGames] = useState(mockGames[1]); // 初始化为第一个用户的游戏库
+  const [games, setGames] = useState<Game[]>([]);
 
-  // 从主进程加载保存的用户选择
+  // 从主进程加载保存的用户选择和游戏收藏状态
   useEffect(() => {
-    const loadUser = async () => {
+    const loadUserAndGames = async () => {
       const savedUserId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
       if (savedUserId) {
         const user = mockUsers.find(u => u.id === savedUserId);
         if (user) {
           setCurrentUser(user);
-          setGames(mockGames[user.id]); // 加载相应用户的游戏库
+          // 加载用户的游戏收藏状态
+          const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${user.id}`);
+          if (savedGames) {
+            setGames(savedGames);
+          } else {
+            setGames(mockGames[user.id]);
+          }
         }
+      } else {
+        setGames(mockGames[1]);
       }
     };
     
-    loadUser();
+    loadUserAndGames();
   }, []);
 
   console.log('App rendered, language:', language);
@@ -227,9 +236,23 @@ const App: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleUserChange = (user: typeof mockUsers[0]) => {
+  const handleUserChange = async (user: typeof mockUsers[0]) => {
+    // 保存当前用户的游戏收藏状态
+    await ipcRenderer.send('set-store-value', { 
+      key: `userGames_${currentUser.id}`, 
+      value: games 
+    });
+    
     setCurrentUser(user);
-    setGames(mockGames[user.id]); // 切换用户时更新游戏库
+    
+    // 加载新用户的游戏收藏状态
+    const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${user.id}`);
+    if (savedGames) {
+      setGames(savedGames);
+    } else {
+      setGames(mockGames[user.id]);
+    }
+    
     // 保存用户选择到主进程
     ipcRenderer.send('set-store-value', { key: 'currentUserId', value: user.id });
     handleUserMenuClose();
