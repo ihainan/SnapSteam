@@ -417,27 +417,84 @@ const App: React.FC = () => {
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
-                onClose={handleUserMenuClose}
+                onClose={() => setAnchorEl(null)}
                 PaperProps={{
+                  elevation: 3,
                   sx: {
-                    minWidth: '120px',
-                    marginTop: '4px',
-                    boxShadow: theme => theme.palette.mode === 'dark'
-                      ? '0 2px 8px rgba(0,0,0,0.2)'
-                      : '0 2px 8px rgba(0,0,0,0.1)',
-                  }
+                    minWidth: '200px',
+                    mt: 1,
+                    '& .MuiList-root': {
+                      py: 0.5,
+                    },
+                    overflow: 'hidden',
+                    filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                    '& .MuiAvatar-root': {
+                      width: 32,
+                      height: 32,
+                      ml: -0.5,
+                      mr: 1.5,
+                    },
+                  },
                 }}
+                transformOrigin={{ horizontal: 'left', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'left', vertical: 'bottom' }}
               >
                 {users.map((user) => (
                   <MenuItem
                     key={user.id}
                     onClick={() => handleUserChange(user)}
+                    selected={user.id === currentUser?.id}
                     sx={{
-                      fontSize: '13px',
-                      padding: '8px 16px',
+                      minHeight: '48px',
+                      px: 2,
+                      py: 1,
+                      borderRadius: 0.5,
+                      mx: 0.5,
+                      '&:hover': {
+                        backgroundColor: theme => theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.04)',
+                      },
+                      '&.Mui-selected': {
+                        backgroundColor: theme => theme.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.12)'
+                          : 'rgba(25, 118, 210, 0.08)',
+                        '&:hover': {
+                          backgroundColor: theme => theme.palette.mode === 'dark'
+                            ? 'rgba(255, 255, 255, 0.16)'
+                            : 'rgba(25, 118, 210, 0.12)',
+                        },
+                      },
                     }}
                   >
-                    {user.name}
+                    <Avatar
+                      src={user.avatar || undefined}
+                      sx={{
+                        bgcolor: theme => theme.palette.primary.main,
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {!user.avatar && user.name[0]}
+                    </Avatar>
+                    <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: theme => user.id === currentUser?.id ? 600 : 400,
+                        }}
+                      >
+                        {user.name}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          color: 'text.secondary',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        Steam ID: {user.id}
+                      </Typography>
+                    </Box>
                   </MenuItem>
                 ))}
               </Menu>

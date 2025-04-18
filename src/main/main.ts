@@ -186,6 +186,12 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
     const userDataPath = path.join(steamPath, 'userdata', userId.toString());
     const games: SteamGame[] = [];
     
+    // 读取用户的本地配置
+    const localConfigPath = path.join(userDataPath, 'config', 'localconfig.vdf');
+    if (!fs.existsSync(localConfigPath)) return [];
+    
+    const localConfigContent = fs.readFileSync(localConfigPath, 'utf-8');
+    
     // 读取游戏库文件
     const libraryFoldersPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
     if (!fs.existsSync(libraryFoldersPath)) return [];
@@ -216,22 +222,28 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
           const appId = parseInt(appIdMatch[1]);
           const name = nameMatch[1];
           
-          // 检查游戏是否在收藏夹中
-          const favoritesPath = path.join(userDataPath, 'config', 'shortcuts.vdf');
-          let isFavorite = false;
+          // 检查游戏是否属于该用户
+          const gameOwnershipPattern = new RegExp(`"${appId}"\\s*{\\s*"LastPlayed"\\s*"\\d+"`, 'g');
+          const isOwned = gameOwnershipPattern.test(localConfigContent);
           
-          if (fs.existsSync(favoritesPath)) {
-            const favoritesContent = fs.readFileSync(favoritesPath, 'utf-8');
-            isFavorite = favoritesContent.includes(`appid=${appId}`);
+          if (isOwned) {
+            // 检查游戏是否在收藏夹中
+            const favoritesPath = path.join(userDataPath, 'config', 'shortcuts.vdf');
+            let isFavorite = false;
+            
+            if (fs.existsSync(favoritesPath)) {
+              const favoritesContent = fs.readFileSync(favoritesPath, 'utf-8');
+              isFavorite = favoritesContent.includes(`appid=${appId}`);
+            }
+            
+            games.push({
+              id: appId,
+              name,
+              coverUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
+              favorite: isFavorite,
+              userId
+            });
           }
-          
-          games.push({
-            id: appId,
-            name,
-            coverUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
-            favorite: isFavorite,
-            userId
-          });
         }
       }
     }
