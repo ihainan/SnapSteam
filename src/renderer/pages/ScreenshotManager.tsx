@@ -32,9 +32,9 @@ const mockScreenshots = [
 ];
 
 const SectionTitle = styled(Typography)(() => ({
-  color: '#333333',
+  color: '#2c3e50',
   fontSize: '24px',
-  fontWeight: 500,
+  fontWeight: 600,
   marginBottom: '16px',
   paddingBottom: '8px',
   borderBottom: '1px solid #e0e0e0',
@@ -42,12 +42,14 @@ const SectionTitle = styled(Typography)(() => ({
 
 const ScreenshotCard = styled(Card)(() => ({
   position: 'relative',
-  borderRadius: '4px',
+  borderRadius: '8px',
   overflow: 'hidden',
-  transition: 'transform 0.15s',
+  transition: 'all 0.2s ease',
   aspectRatio: '16/9',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   '&:hover': {
-    transform: 'scale(1.02)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
     cursor: 'pointer',
   },
 }));
@@ -56,20 +58,21 @@ const ScreenshotImage = styled('img')(() => ({
   width: '100%',
   height: '100%',
   objectFit: 'cover',
+  transition: 'all 0.2s ease',
 }));
 
 const UploadButton = styled(Button)(() => ({
-  backgroundColor: '#4285f4',
+  backgroundColor: '#3b82f6',
   color: '#ffffff',
   padding: '8px 16px',
   textTransform: 'none',
-  borderRadius: '4px',
+  borderRadius: '8px',
   boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
   transition: 'all 0.2s ease',
   fontSize: '13px',
   fontWeight: 500,
   '&:hover': {
-    backgroundColor: '#3367d6',
+    backgroundColor: '#2563eb',
     boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
     transform: 'translateY(-1px)',
   },

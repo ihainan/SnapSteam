@@ -13,16 +13,16 @@ import {
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
 const DropZone = styled(Box)(({ isDragActive }: { isDragActive?: boolean }) => ({
-  border: `2px dashed ${isDragActive ? '#4285f4' : '#e0e0e0'}`,
-  borderRadius: '8px',
+  border: `2px dashed ${isDragActive ? '#3b82f6' : '#e0e0e0'}`,
+  borderRadius: '12px',
   padding: '40px 20px',
   textAlign: 'center',
-  backgroundColor: isDragActive ? 'rgba(66, 133, 244, 0.08)' : '#f5f5f5',
+  backgroundColor: isDragActive ? 'rgba(59, 130, 246, 0.08)' : '#f8f9fa',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: 'rgba(66, 133, 244, 0.08)',
-    borderColor: '#4285f4',
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderColor: '#3b82f6',
   },
 }));
 
@@ -36,8 +36,9 @@ const PreviewGrid = styled(Box)({
 const PreviewCard = styled(Box)({
   position: 'relative',
   aspectRatio: '16/9',
-  borderRadius: '4px',
+  borderRadius: '8px',
   overflow: 'hidden',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   '&:hover .delete-button': {
     opacity: 1,
   },
@@ -47,6 +48,7 @@ const PreviewImage = styled('img')({
   width: '100%',
   height: '100%',
   objectFit: 'cover',
+  transition: 'all 0.2s ease',
 });
 
 const DeleteButton = styled(IconButton)({
@@ -57,7 +59,7 @@ const DeleteButton = styled(IconButton)({
   color: '#ffffff',
   padding: '4px',
   opacity: 0,
-  transition: 'opacity 0.2s ease',
+  transition: 'all 0.2s ease',
   '&:hover': {
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
@@ -121,12 +123,18 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: '8px',
+          borderRadius: '12px',
           padding: '16px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         },
       }}
     >
-      <DialogTitle sx={{ padding: '0 0 16px 0' }}>
+      <DialogTitle sx={{ 
+        padding: '0 0 16px 0',
+        color: '#2c3e50',
+        fontSize: '20px',
+        fontWeight: 600,
+      }}>
         添加截图
       </DialogTitle>
       <DialogContent sx={{ padding: '0' }}>
@@ -175,11 +183,31 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
         )}
       </DialogContent>
       <DialogActions sx={{ padding: '16px 0 0 0' }}>
-        <Button onClick={onClose}>取消</Button>
+        <Button 
+          onClick={onClose}
+          sx={{
+            color: '#64748b',
+            '&:hover': {
+              backgroundColor: 'rgba(0,0,0,0.04)',
+            },
+          }}
+        >
+          取消
+        </Button>
         <Button
           variant="contained"
           onClick={handleUpload}
           disabled={selectedFiles.length === 0}
+          sx={{
+            backgroundColor: '#3b82f6',
+            '&:hover': {
+              backgroundColor: '#2563eb',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: '#e0e0e0',
+              color: '#9e9e9e',
+            },
+          }}
         >
           导入截图
         </Button>

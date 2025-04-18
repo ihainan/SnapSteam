@@ -4,17 +4,19 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useNavigate } from 'react-router-dom';
 
 const GameCard = styled(Card)(() => ({
-  backgroundColor: 'transparent',
-  color: '#333333',
-  transition: 'transform 0.15s',
+  backgroundColor: '#ffffff',
+  color: '#2c3e50',
+  transition: 'all 0.2s ease',
   position: 'relative',
-  borderRadius: '2px',
+  borderRadius: '8px',
   overflow: 'hidden',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   '&:hover': {
-    transform: 'scale(1.02)',
+    transform: 'translateY(-2px)',
+    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
     cursor: 'pointer',
     '& .MuiCardMedia-root': {
-      filter: 'brightness(1.1)',
+      filter: 'brightness(1.05)',
     },
   },
 }));
@@ -24,11 +26,11 @@ const GameTitle = styled(Typography)(() => ({
   bottom: 0,
   left: 0,
   right: 0,
-  padding: '20px 8px 6px',
-  background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)',
-  fontSize: '12px',
+  padding: '24px 12px 8px',
+  background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)',
+  fontSize: '13px',
   fontWeight: 500,
-  lineHeight: 1.2,
+  lineHeight: 1.3,
   color: '#ffffff',
 }));
 
@@ -38,40 +40,40 @@ interface FavoriteButtonProps {
 
 const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
   position: 'absolute',
-  top: 6,
-  right: 6,
+  top: 8,
+  right: 8,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '28px',
-  height: '28px',
+  width: '32px',
+  height: '32px',
   borderRadius: '50%',
   backdropFilter: 'blur(8px)',
-  backgroundColor: favorite ? 'rgba(255, 64, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-  border: `1px solid ${favorite ? 'rgba(255, 64, 129, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
-  color: favorite ? '#ff4081' : '#ffffff',
-  opacity: 0.85,
+  backgroundColor: favorite ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+  border: `1px solid ${favorite ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
+  color: favorite ? '#ef4444' : '#ffffff',
+  opacity: 0.9,
   transition: 'all 0.2s ease',
   '&:hover': {
     opacity: 1,
-    backgroundColor: favorite ? 'rgba(255, 64, 129, 0.2)' : 'rgba(255, 255, 255, 0.2)',
-    border: `1px solid ${favorite ? 'rgba(255, 64, 129, 0.5)' : 'rgba(255, 255, 255, 0.5)'}`,
+    backgroundColor: favorite ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+    border: `1px solid ${favorite ? 'rgba(239, 68, 68, 0.5)' : 'rgba(255, 255, 255, 0.5)'}`,
     transform: 'scale(1.05)',
   },
 }));
 
 const SectionTitle = styled(Typography)(() => ({
-  color: '#333333',
+  color: '#2c3e50',
   fontSize: '16px',
-  fontWeight: 500,
-  marginBottom: '8px',
+  fontWeight: 600,
+  marginBottom: '12px',
   paddingBottom: '4px',
   paddingLeft: '8px',
   borderBottom: '1px solid #e0e0e0',
 }));
 
 const Section = styled(Box)(() => ({
-  marginBottom: '16px',
+  marginBottom: '20px',
   '&:last-child': {
     marginBottom: 0,
   },
@@ -80,7 +82,7 @@ const Section = styled(Box)(() => ({
 const GamesGrid = styled(Box)(() => ({
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-  gap: '8px',
+  gap: '12px',
   padding: '0 8px',
 }));
 
@@ -90,9 +92,10 @@ const EmptyFavorites = styled(Box)(() => ({
   alignItems: 'center',
   justifyContent: 'center',
   padding: '32px',
-  color: '#666666',
-  backgroundColor: 'rgba(0, 0, 0, 0.02)',
-  borderRadius: '4px',
+  color: '#64748b',
+  backgroundColor: '#ffffff',
+  borderRadius: '8px',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
   '& .MuiSvgIcon-root': {
     fontSize: 48,
     marginBottom: 16,
@@ -104,6 +107,7 @@ const EmptyText = styled(Typography)(() => ({
   fontSize: '14px',
   textAlign: 'center',
   lineHeight: 1.5,
+  color: '#64748b',
 }));
 
 // 模拟游戏数据

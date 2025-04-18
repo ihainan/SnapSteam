@@ -32,13 +32,14 @@ const mockUsers = [
 // 自定义搜索框样式
 const SearchBox = styled('div')(({ theme }) => ({
   position: 'relative',
-  borderRadius: '4px',
-  backgroundColor: alpha('#000', 0.04),
+  borderRadius: '8px',
+  backgroundColor: alpha('#000', 0.03),
   '&:hover': {
-    backgroundColor: alpha('#000', 0.08),
+    backgroundColor: alpha('#000', 0.05),
   },
   marginRight: '16px',
   width: '240px',
+  transition: 'all 0.2s ease',
 }));
 
 const SearchIconWrapper = styled('div')({
@@ -49,7 +50,7 @@ const SearchIconWrapper = styled('div')({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: '#666666',
+  color: '#64748b',
 });
 
 const StyledInputBase = styled(InputBase)({
@@ -58,6 +59,7 @@ const StyledInputBase = styled(InputBase)({
     padding: '8px 8px 8px 40px',
     width: '100%',
     fontSize: '13px',
+    color: '#2c3e50',
   },
 });
 
@@ -103,12 +105,13 @@ const App: React.FC = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            backgroundColor: '#f5f5f5',
-            color: '#333333',
+            backgroundColor: '#ffffff',
+            color: '#2c3e50',
             borderRight: '1px solid #e0e0e0',
             paddingTop: '8px',
             display: 'flex',
             flexDirection: 'column',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
           },
         }}
       >
@@ -119,33 +122,32 @@ const App: React.FC = () => {
               onClick={() => navigate(item.path)}
               selected={location.pathname === item.path}
               sx={{
-                padding: '6px 12px',
-                margin: '1px 6px',
-                borderRadius: '4px',
-                color: '#333333',
+                padding: '8px 16px',
+                margin: '2px 8px',
+                borderRadius: '8px',
+                color: '#2c3e50',
                 '&.Mui-selected': {
-                  backgroundColor: '#4285f4',
+                  backgroundColor: '#3b82f6',
                   color: '#ffffff',
                   '&:hover': {
-                    backgroundColor: '#4285f4',
+                    backgroundColor: '#2563eb',
                   },
                   '& .MuiListItemIcon-root': {
                     color: '#ffffff',
                   },
                 },
                 '&:hover': {
-                  backgroundColor: '#4285f4',
-                  opacity: 0.8,
-                  color: '#ffffff',
+                  backgroundColor: '#f1f5f9',
+                  color: '#2c3e50',
                   '& .MuiListItemIcon-root': {
-                    color: '#ffffff',
+                    color: '#2c3e50',
                   },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: '#333333',
+                  color: '#64748b',
                   minWidth: '32px',
                   '& .MuiSvgIcon-root': {
                     fontSize: '20px',
@@ -159,6 +161,7 @@ const App: React.FC = () => {
                 sx={{
                   '& .MuiListItemText-primary': {
                     fontSize: '13px',
+                    fontWeight: 500,
                   },
                   marginLeft: '-8px',
                 }}
@@ -236,7 +239,7 @@ const App: React.FC = () => {
 
       <Box
         sx={{
-          backgroundColor: '#ffffff',
+          backgroundColor: '#f8f9fa',
           minHeight: '100vh',
           width: `calc(100% - ${drawerWidth}px)`,
           flexGrow: 1,
@@ -252,6 +255,8 @@ const App: React.FC = () => {
               justifyContent: 'flex-end',
               padding: '12px 16px',
               borderBottom: '1px solid #e0e0e0',
+              backgroundColor: '#ffffff',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
             <SearchBox>
