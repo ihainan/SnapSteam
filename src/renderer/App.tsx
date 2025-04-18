@@ -279,12 +279,12 @@ const App: React.FC = () => {
 
   const menuItems = [
     { 
-      text: t.library.allGames, 
+      text: t.navigation.gameLibrary, 
       icon: <LibraryBooks />, 
       path: '/',
       disabled: !isSteamPathValid // 如果 Steam 路径无效，禁用游戏库选项
     },
-    { text: t.settings.title, icon: <Settings />, path: '/settings' },
+    { text: t.navigation.settings, icon: <Settings />, path: '/settings' },
   ];
 
   return (

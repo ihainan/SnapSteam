@@ -14,16 +14,20 @@ export const translations = {
         zh: '中文',
         en: 'English'
       },
-      steamPath: 'Steam 安装路径',
+      steamPath: 'Steam 数据目录',
       browse: '浏览',
       pathWarning: '请设置有效的 Steam 用户数据目录以使用游戏库功能',
       pathError: '选择的路径不是有效的 Steam 用户数据目录',
       dialogError: '打开文件夹对话框时出错',
       pathHelper: '请选择 Steam 用户数据目录（通常包含 userdata 文件夹）'
     },
+    navigation: {
+      gameLibrary: '游戏库',
+      settings: '设置'
+    },
     library: {
       favorites: '收藏夹',
-      allGames: '所有游戏',
+      allGames: '已安装游戏',
       recentlyPlayed: '最近游玩',
       emptyFavorites: '收藏夹还是空的呢\n点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧',
       refresh: '刷新游戏库'
@@ -54,16 +58,20 @@ export const translations = {
         zh: '中文',
         en: 'English'
       },
-      steamPath: 'Steam Installation Path',
+      steamPath: 'Steam Data Directory',
       browse: 'Browse',
       pathWarning: 'Please set a valid Steam user data directory to use the game library feature',
       pathError: 'The selected path is not a valid Steam user data directory',
       dialogError: 'Error opening directory dialog',
       pathHelper: 'Please select Steam user data directory (usually contains userdata folder)'
     },
+    navigation: {
+      gameLibrary: 'Game Library',
+      settings: 'Settings'
+    },
     library: {
       favorites: 'Favorites',
-      allGames: 'All Games',
+      allGames: 'Installed Games',
       recentlyPlayed: 'Recently Played',
       emptyFavorites: 'Your favorites list is empty\nClick the favorite icon on the top right of game cards to add games here',
       refresh: 'Refresh Library'

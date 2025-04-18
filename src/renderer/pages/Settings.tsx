@@ -134,14 +134,32 @@ const Settings: React.FC = () => {
   return (
     <Box>
       <SectionTitle>{t.settings.title}</SectionTitle>
-
-      <Box sx={{ maxWidth: 800 }}>
+      <Box sx={{ mb: 4 }}>
+        <SubTitle>{t.settings.steamPath}</SubTitle>
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <StyledTextField
+            fullWidth
+            value={steamPath}
+            onChange={handlePathChange}
+            error={!!pathError}
+            helperText={pathError || t.settings.pathHelper}
+          />
+          <StyledButton
+            variant="contained"
+            startIcon={<Folder />}
+            onClick={handleBrowse}
+          >
+            {t.settings.browse}
+          </StyledButton>
+        </Box>
         {!isPathValid && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
+          <Alert severity="warning" sx={{ mb: 2 }}>
             {t.settings.pathWarning}
           </Alert>
         )}
+      </Box>
 
+      <Box sx={{ maxWidth: 800 }}>
         <SubTitle>
           {t.settings.appearance}
         </SubTitle>
@@ -170,31 +188,6 @@ const Settings: React.FC = () => {
             <MenuItem value="en">{t.settings.languageOptions.en}</MenuItem>
           </Select>
         </FormControl>
-
-        <SubTitle>
-          {t.settings.steamPath}
-        </SubTitle>
-        
-        <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <StyledTextField
-              fullWidth
-              size="small"
-              placeholder={t.settings.steamPath}
-              value={steamPath}
-              onChange={handlePathChange}
-              error={!!pathError}
-              helperText={pathError || t.settings.pathHelper}
-            />
-            <StyledButton
-              variant="contained"
-              onClick={handleBrowse}
-              startIcon={<Folder />}
-            >
-              {t.settings.browse}
-            </StyledButton>
-          </Box>
-        </Box>
       </Box>
     </Box>
   );
