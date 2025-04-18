@@ -32,14 +32,31 @@ const GameTitle = styled(Typography)(() => ({
   color: '#ffffff',
 }));
 
-const FavoriteButton = styled(Box)(() => ({
+interface FavoriteButtonProps {
+  favorite: boolean;
+}
+
+const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
   position: 'absolute',
   top: 6,
   right: 6,
-  color: '#ffffff',
-  opacity: 0.7,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '28px',
+  height: '28px',
+  borderRadius: '50%',
+  backdropFilter: 'blur(8px)',
+  backgroundColor: favorite ? 'rgba(255, 64, 129, 0.1)' : 'rgba(255, 255, 255, 0.1)',
+  border: `1px solid ${favorite ? 'rgba(255, 64, 129, 0.3)' : 'rgba(255, 255, 255, 0.3)'}`,
+  color: favorite ? '#ff4081' : '#ffffff',
+  opacity: 0.85,
+  transition: 'all 0.2s ease',
   '&:hover': {
     opacity: 1,
+    backgroundColor: favorite ? 'rgba(255, 64, 129, 0.2)' : 'rgba(255, 255, 255, 0.2)',
+    border: `1px solid ${favorite ? 'rgba(255, 64, 129, 0.5)' : 'rgba(255, 255, 255, 0.5)'}`,
+    transform: 'scale(1.05)',
   },
 }));
 
@@ -144,11 +161,9 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
         alt={game.name}
       />
       <GameTitle>{game.name}</GameTitle>
-      {game.favorite && (
-        <FavoriteButton>
-          <FavoriteIcon sx={{ fontSize: 18 }} />
-        </FavoriteButton>
-      )}
+      <FavoriteButton favorite={game.favorite}>
+        <FavoriteIcon sx={{ fontSize: 18 }} />
+      </FavoriteButton>
     </GameCard>
   );
 
