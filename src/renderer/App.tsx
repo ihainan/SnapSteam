@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { 
   Box, 
   Drawer, 
@@ -20,7 +20,7 @@ import {
 import { LibraryBooks, Settings, Search } from '@mui/icons-material';
 import Library from './pages/Library';
 import SettingsPage from './pages/Settings';
-import ScreenshotManager from './pages/ScreenshotManager';
+import ScreenshotManagerRoute from './pages/ScreenshotManagerRoute';
 import { translations } from './locales';
 import { useLanguage } from './contexts/LanguageContext';
 import { ipcRenderer } from 'electron';
@@ -479,7 +479,10 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<Library searchTerm={searchTerm} games={games} setGames={setGames} />} />
             <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/screenshots/:gameId" element={<ScreenshotManager gameId={1} gameName="Half-Life 2" />} />
+            <Route 
+              path="/screenshots/:gameId" 
+              element={<ScreenshotManagerRoute games={games} />} 
+            />
           </Routes>
         </Box>
       </Box>

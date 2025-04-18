@@ -236,6 +236,51 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
   }
 });
 
+// 获取游戏的截图
+ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: number) => {
+  try {
+    const steamPath = store.get('steamPath') as string;
+    const screenshotsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
+    
+    console.log('Looking for screenshots in:', screenshotsPath);
+    
+    if (!fs.existsSync(screenshotsPath)) {
+      console.log('Screenshots directory does not exist');
+      return [];
+    }
+
+    const screenshots: any[] = [];
+    const files = fs.readdirSync(screenshotsPath);
+    
+    console.log('Found files:', files);
+    
+    for (const file of files) {
+      if (file.endsWith('.jpg')) {
+        const filePath = path.join(screenshotsPath, file);
+        const stats = fs.statSync(filePath);
+        
+        // 检查文件是否可读
+        try {
+          fs.accessSync(filePath, fs.constants.R_OK);
+          screenshots.push({
+            id: file,
+            url: `file://${filePath}`,
+            timestamp: stats.mtime.toISOString()
+          });
+        } catch (error) {
+          console.error(`Cannot read file ${filePath}:`, error);
+        }
+      }
+    }
+    
+    console.log('Found screenshots:', screenshots.length);
+    return screenshots;
+  } catch (error) {
+    console.error('Error getting game screenshots:', error);
+    return [];
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
 

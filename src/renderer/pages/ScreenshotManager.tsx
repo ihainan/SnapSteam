@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -13,25 +14,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import UploadDialog from '../components/UploadDialog';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
-
-// 使用实际截图数据
-const mockScreenshots = [
-  {
-    id: 1,
-    url: './samples/image_01.png',
-    timestamp: '2024-03-15T10:30:00',
-  },
-  {
-    id: 2,
-    url: './samples/image_02.png',
-    timestamp: '2024-03-14T15:45:00',
-  },
-  {
-    id: 3,
-    url: './samples/image_03.png',
-    timestamp: '2024-03-13T09:20:00',
-  },
-];
+import { ipcRenderer } from 'electron';
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
@@ -102,15 +85,43 @@ interface ScreenshotManagerProps {
 
 const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName }) => {
   const { language } = useLanguage();
-  const [screenshots, setScreenshots] = useState(mockScreenshots);
+  const [screenshots, setScreenshots] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const t = translations[language];
 
+  useEffect(() => {
+    const loadScreenshots = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const userId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
+        console.log('Loading screenshots for game:', gameId, 'user:', userId);
+        
+        const gameScreenshots = await ipcRenderer.invoke('get-game-screenshots', gameId, userId);
+        console.log('Loaded screenshots:', gameScreenshots);
+        
+        if (gameScreenshots.length === 0) {
+          setError('未找到游戏截图');
+        }
+        
+        setScreenshots(gameScreenshots);
+      } catch (error) {
+        console.error('Error loading screenshots:', error);
+        setError('加载截图时出错');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadScreenshots();
+  }, [gameId]);
+
   const handleScreenshotClick = (url: string) => {
-    // 使用系统图片浏览器打开
     window.open(url, '_blank');
   };
 
@@ -128,7 +139,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
 
     // 模拟添加新截图
     const newScreenshots = files.map((file, index) => ({
-      id: screenshots.length + index + 1,
+      id: `new-${index}`,
       url: URL.createObjectURL(file),
       timestamp: new Date().toISOString(),
     }));
@@ -162,18 +173,32 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
         </Box>
       )}
 
-      <Grid container spacing={2}>
-        {screenshots.map((screenshot) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={screenshot.id}>
-            <ScreenshotCard onClick={() => handleScreenshotClick(screenshot.url)}>
-              <ScreenshotImage
-                src={screenshot.url}
-                alt={`Screenshot ${screenshot.id}`}
-              />
-            </ScreenshotCard>
-          </Grid>
-        ))}
-      </Grid>
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+          <LinearProgress sx={{ width: '100%' }} />
+        </Box>
+      )}
+
+      {error && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+          <Typography color="error">{error}</Typography>
+        </Box>
+      )}
+
+      {!loading && !error && (
+        <Grid container spacing={2}>
+          {screenshots.map((screenshot) => (
+            <Grid item xs={12} sm={6} md={4} lg={3} key={screenshot.id}>
+              <ScreenshotCard onClick={() => handleScreenshotClick(screenshot.url)}>
+                <ScreenshotImage
+                  src={screenshot.url}
+                  alt={`Screenshot ${screenshot.id}`}
+                />
+              </ScreenshotCard>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       <UploadDialog
         open={isUploadDialogOpen}
