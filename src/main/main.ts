@@ -156,12 +156,19 @@ ipcMain.handle('get-steam-users', async () => {
       // 读取用户配置
       const configContent = fs.readFileSync(userConfigPath, 'utf-8');
       const nameMatch = configContent.match(/PersonaName"\s+"([^"]+)"/);
-      const avatarMatch = configContent.match(/AvatarHash"\s+"([^"]+)"/);
+      const avatarMatch = configContent.match(/avatar"\s+"([^"]+)"/);
+      
+      // 尝试获取头像 URL
+      let avatarUrl = null;
+      if (avatarMatch) {
+        const avatarHash = avatarMatch[1];
+        avatarUrl = `https://avatars.steamstatic.com/${avatarHash}_full.jpg`;
+      }
       
       users.push({
         id: parseInt(userId),
         name: nameMatch ? nameMatch[1] : `用户 ${userId}`,
-        avatar: avatarMatch ? `https://avatars.steamstatic.com/${avatarMatch[1]}_full.jpg` : null
+        avatar: avatarUrl
       });
     }
     

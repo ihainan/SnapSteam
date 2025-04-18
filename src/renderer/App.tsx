@@ -400,8 +400,9 @@ const App: React.FC = () => {
                     fontSize: '13px',
                     marginRight: '12px',
                   }}
+                  src={currentUser?.avatar || undefined}
                 >
-                  {currentUser?.name[0]}
+                  {!currentUser?.avatar && currentUser?.name[0]}
                 </Avatar>
                 <ListItemText
                   primary={currentUser?.name}
