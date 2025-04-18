@@ -9,8 +9,9 @@ import {
   Button,
   LinearProgress,
   styled,
+  Paper,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, PhotoLibrary as PhotoLibraryIcon } from '@mui/icons-material';
 import UploadDialog from '../components/UploadDialog';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
@@ -80,6 +81,44 @@ const UploadButton = styled(Button)(({ theme }) => ({
     },
   },
 })) as typeof Button;
+
+const EmptyStateContainer = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(8),
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  borderRadius: '24px',
+  backgroundColor: theme.palette.mode === 'dark' 
+    ? 'rgba(255, 255, 255, 0.05)' 
+    : 'rgba(0, 0, 0, 0.02)',
+  border: `2px dashed ${theme.palette.mode === 'dark' 
+    ? 'rgba(255, 255, 255, 0.1)' 
+    : 'rgba(0, 0, 0, 0.1)'}`,
+  minHeight: '400px',
+  margin: theme.spacing(4),
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: theme.palette.mode === 'dark' 
+      ? 'rgba(255, 255, 255, 0.08)' 
+      : 'rgba(0, 0, 0, 0.03)',
+    borderColor: theme.palette.primary.main,
+  }
+}));
+
+const EmptyStateIcon = styled(PhotoLibraryIcon)(({ theme }) => ({
+  fontSize: '96px',
+  marginBottom: theme.spacing(3),
+  color: theme.palette.mode === 'dark' 
+    ? 'rgba(255, 255, 255, 0.2)' 
+    : 'rgba(0, 0, 0, 0.15)',
+  transition: 'all 0.3s ease',
+  '${EmptyStateContainer}:hover &': {
+    color: theme.palette.primary.main,
+    transform: 'scale(1.1)',
+  }
+}));
 
 interface ScreenshotManagerProps {
   gameId: number;
@@ -182,16 +221,18 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <SectionTitle>{gameName} - {t.screenshotManager.title}</SectionTitle>
-        <Box>
-          <UploadButton
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setIsUploadDialogOpen(true)}
-            disabled={isUploading}
-          >
-            {t.screenshotManager.addScreenshot}
-          </UploadButton>
-        </Box>
+        {!error && (
+          <Box>
+            <UploadButton
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setIsUploadDialogOpen(true)}
+              disabled={isUploading}
+            >
+              {t.screenshotManager.addScreenshot}
+            </UploadButton>
+          </Box>
+        )}
       </Box>
 
       {isUploading && (
@@ -210,9 +251,35 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       )}
 
       {error && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-          <Typography color="error">{error}</Typography>
-        </Box>
+        <EmptyStateContainer>
+          <EmptyStateIcon />
+          <Typography 
+            variant="h5" 
+            color="text.secondary" 
+            sx={{ 
+              mb: 4,
+              fontWeight: 500,
+              letterSpacing: '0.5px',
+              opacity: 0.8
+            }}
+          >
+            {error}
+          </Typography>
+          <UploadButton
+            variant="contained"
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={() => setIsUploadDialogOpen(true)}
+            disabled={isUploading}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontSize: '16px'
+            }}
+          >
+            {t.screenshotManager.addScreenshot}
+          </UploadButton>
+        </EmptyStateContainer>
       )}
 
       {!loading && !error && (
