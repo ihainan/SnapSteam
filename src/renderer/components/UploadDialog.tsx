@@ -12,17 +12,32 @@ import {
 } from '@mui/material';
 import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
 
-const DropZone = styled(Box)(({ isDragActive }: { isDragActive?: boolean }) => ({
-  border: `2px dashed ${isDragActive ? '#3b82f6' : '#e0e0e0'}`,
+interface DropZoneProps {
+  isDragActive?: boolean;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
+}
+
+const DropZone = styled(Box)<DropZoneProps>(({ isDragActive, theme }) => ({
+  border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
   borderRadius: '12px',
   padding: '40px 20px',
   textAlign: 'center',
-  backgroundColor: isDragActive ? 'rgba(59, 130, 246, 0.08)' : '#f8f9fa',
+  backgroundColor: isDragActive 
+    ? theme.palette.mode === 'dark'
+      ? 'rgba(96, 165, 250, 0.08)'
+      : 'rgba(59, 130, 246, 0.08)'
+    : theme.palette.mode === 'dark'
+      ? 'rgba(255, 255, 255, 0.05)'
+      : '#f8f9fa',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
-    borderColor: '#3b82f6',
+    backgroundColor: theme.palette.mode === 'dark'
+      ? 'rgba(96, 165, 250, 0.08)'
+      : 'rgba(59, 130, 246, 0.08)',
+    borderColor: theme.palette.primary.main,
   },
 }));
 
@@ -33,16 +48,16 @@ const PreviewGrid = styled(Box)({
   marginTop: '20px',
 });
 
-const PreviewCard = styled(Box)({
+const PreviewCard = styled(Box)(({ theme }) => ({
   position: 'relative',
   aspectRatio: '16/9',
   borderRadius: '8px',
   overflow: 'hidden',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  boxShadow: theme.palette.mode === 'dark' ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.1)',
   '&:hover .delete-button': {
     opacity: 1,
   },
-});
+}));
 
 const PreviewImage = styled('img')({
   width: '100%',
@@ -51,22 +66,22 @@ const PreviewImage = styled('img')({
   transition: 'all 0.2s ease',
 });
 
-const DeleteButton = styled(IconButton)({
+const DeleteButton = styled(IconButton)(({ theme }) => ({
   position: 'absolute',
   top: '4px',
   right: '4px',
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.5)',
   color: '#ffffff',
   padding: '4px',
   opacity: 0,
   transition: 'all 0.2s ease',
   '&:hover': {
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)',
   },
   '& .MuiSvgIcon-root': {
     fontSize: '20px',
   },
-});
+}));
 
 interface UploadDialogProps {
   open: boolean;
@@ -125,13 +140,15 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
         sx: {
           borderRadius: '12px',
           padding: '16px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          boxShadow: theme => theme.palette.mode === 'dark' 
+            ? '0 4px 6px rgba(0,0,0,0.2)' 
+            : '0 4px 6px rgba(0,0,0,0.1)',
         },
       }}
     >
       <DialogTitle sx={{ 
         padding: '0 0 16px 0',
-        color: '#2c3e50',
+        color: theme => theme.palette.text.primary,
         fontSize: '20px',
         fontWeight: 600,
       }}>
@@ -186,9 +203,11 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
         <Button 
           onClick={onClose}
           sx={{
-            color: '#64748b',
+            color: theme => theme.palette.text.secondary,
             '&:hover': {
-              backgroundColor: 'rgba(0,0,0,0.04)',
+              backgroundColor: theme => theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.08)'
+                : 'rgba(0, 0, 0, 0.04)',
             },
           }}
         >
@@ -199,13 +218,17 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
           onClick={handleUpload}
           disabled={selectedFiles.length === 0}
           sx={{
-            backgroundColor: '#3b82f6',
+            backgroundColor: theme => theme.palette.primary.main,
             '&:hover': {
-              backgroundColor: '#2563eb',
+              backgroundColor: theme => theme.palette.primary.dark,
             },
             '&.Mui-disabled': {
-              backgroundColor: '#e0e0e0',
-              color: '#9e9e9e',
+              backgroundColor: theme => theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.12)'
+                : '#e0e0e0',
+              color: theme => theme.palette.mode === 'dark'
+                ? 'rgba(255, 255, 255, 0.3)'
+                : '#9e9e9e',
             },
           }}
         >

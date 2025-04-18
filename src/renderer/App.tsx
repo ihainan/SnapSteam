@@ -33,16 +33,16 @@ const mockUsers = [
 const SearchBox = styled('div')(({ theme }) => ({
   position: 'relative',
   borderRadius: '8px',
-  backgroundColor: alpha('#000', 0.03),
+  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
   '&:hover': {
-    backgroundColor: alpha('#000', 0.05),
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
   },
   marginRight: '16px',
   width: '240px',
   transition: 'all 0.2s ease',
 }));
 
-const SearchIconWrapper = styled('div')({
+const SearchIconWrapper = styled('div')(({ theme }) => ({
   padding: '0 12px',
   height: '100%',
   position: 'absolute',
@@ -50,18 +50,18 @@ const SearchIconWrapper = styled('div')({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: '#64748b',
-});
+  color: theme.palette.text.secondary,
+}));
 
-const StyledInputBase = styled(InputBase)({
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
   width: '100%',
   '& .MuiInputBase-input': {
     padding: '8px 8px 8px 40px',
     width: '100%',
     fontSize: '13px',
-    color: '#2c3e50',
+    color: theme.palette.text.primary,
   },
-});
+}));
 
 const App: React.FC = () => {
   const navigate = useNavigate();
@@ -105,13 +105,15 @@ const App: React.FC = () => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
-            backgroundColor: '#ffffff',
-            color: '#2c3e50',
-            borderRight: '1px solid #e0e0e0',
+            backgroundColor: theme => theme.palette.background.paper,
+            color: theme => theme.palette.text.primary,
+            borderRight: theme => `1px solid ${theme.palette.divider}`,
             paddingTop: '8px',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            boxShadow: theme => theme.palette.mode === 'dark' 
+              ? '0 1px 3px rgba(0,0,0,0.2)' 
+              : '0 1px 3px rgba(0,0,0,0.05)',
           },
         }}
       >
@@ -125,29 +127,31 @@ const App: React.FC = () => {
                 padding: '8px 16px',
                 margin: '2px 8px',
                 borderRadius: '8px',
-                color: '#2c3e50',
+                color: theme => theme.palette.text.primary,
                 '&.Mui-selected': {
-                  backgroundColor: '#3b82f6',
-                  color: '#ffffff',
+                  backgroundColor: theme => theme.palette.primary.main,
+                  color: theme => theme.palette.primary.contrastText,
                   '&:hover': {
-                    backgroundColor: '#2563eb',
+                    backgroundColor: theme => theme.palette.primary.dark,
                   },
                   '& .MuiListItemIcon-root': {
-                    color: '#ffffff',
+                    color: theme => theme.palette.primary.contrastText,
                   },
                 },
                 '&:hover': {
-                  backgroundColor: '#f1f5f9',
-                  color: '#2c3e50',
+                  backgroundColor: theme => theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.04)',
+                  color: theme => theme.palette.text.primary,
                   '& .MuiListItemIcon-root': {
-                    color: '#2c3e50',
+                    color: theme => theme.palette.text.primary,
                   },
                 },
               }}
             >
               <ListItemIcon
                 sx={{
-                  color: '#64748b',
+                  color: theme => theme.palette.text.secondary,
                   minWidth: '32px',
                   '& .MuiSvgIcon-root': {
                     fontSize: '20px',
@@ -173,7 +177,7 @@ const App: React.FC = () => {
         {location.pathname === '/' && (
           <Box
             sx={{
-              borderTop: '1px solid #e0e0e0',
+              borderTop: theme => `1px solid ${theme.palette.divider}`,
               padding: '8px',
             }}
           >
@@ -183,7 +187,9 @@ const App: React.FC = () => {
                 borderRadius: '4px',
                 padding: '6px 12px',
                 '&:hover': {
-                  backgroundColor: 'rgba(66, 133, 244, 0.08)',
+                  backgroundColor: theme => theme.palette.mode === 'dark'
+                    ? 'rgba(255, 255, 255, 0.08)'
+                    : 'rgba(0, 0, 0, 0.04)',
                 },
               }}
             >
@@ -191,7 +197,7 @@ const App: React.FC = () => {
                 sx={{
                   width: 24,
                   height: 24,
-                  backgroundColor: '#4285f4',
+                  backgroundColor: theme => theme.palette.primary.main,
                   fontSize: '13px',
                   marginRight: '12px',
                 }}
@@ -203,7 +209,7 @@ const App: React.FC = () => {
                 sx={{
                   '& .MuiListItemText-primary': {
                     fontSize: '13px',
-                    color: '#333333',
+                    color: theme => theme.palette.text.primary,
                   },
                 }}
               />
@@ -216,7 +222,9 @@ const App: React.FC = () => {
                 sx: {
                   minWidth: '120px',
                   marginTop: '4px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  boxShadow: theme => theme.palette.mode === 'dark'
+                    ? '0 2px 8px rgba(0,0,0,0.2)'
+                    : '0 2px 8px rgba(0,0,0,0.1)',
                 }
               }}
             >
@@ -239,7 +247,7 @@ const App: React.FC = () => {
 
       <Box
         sx={{
-          backgroundColor: '#f8f9fa',
+          backgroundColor: theme => theme.palette.background.default,
           minHeight: '100vh',
           width: `calc(100% - ${drawerWidth}px)`,
           flexGrow: 1,
@@ -254,9 +262,11 @@ const App: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'flex-end',
               padding: '12px 16px',
-              borderBottom: '1px solid #e0e0e0',
-              backgroundColor: '#ffffff',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+              borderBottom: theme => `1px solid ${theme.palette.divider}`,
+              backgroundColor: theme => theme.palette.background.paper,
+              boxShadow: theme => theme.palette.mode === 'dark'
+                ? '0 1px 3px rgba(0,0,0,0.2)'
+                : '0 1px 3px rgba(0,0,0,0.05)',
             }}
           >
             <SearchBox>

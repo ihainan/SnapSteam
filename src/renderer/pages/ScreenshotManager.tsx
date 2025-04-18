@@ -31,25 +31,25 @@ const mockScreenshots = [
   },
 ];
 
-const SectionTitle = styled(Typography)(() => ({
-  color: '#2c3e50',
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.primary,
   fontSize: '24px',
   fontWeight: 600,
   marginBottom: '16px',
   paddingBottom: '8px',
-  borderBottom: '1px solid #e0e0e0',
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
-const ScreenshotCard = styled(Card)(() => ({
+const ScreenshotCard = styled(Card)(({ theme }) => ({
   position: 'relative',
   borderRadius: '8px',
   overflow: 'hidden',
   transition: 'all 0.2s ease',
   aspectRatio: '16/9',
-  boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+  boxShadow: theme.palette.mode === 'dark' ? '0 1px 3px rgba(0,0,0,0.2)' : '0 1px 3px rgba(0,0,0,0.1)',
   '&:hover': {
     transform: 'translateY(-2px)',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+    boxShadow: theme.palette.mode === 'dark' ? '0 4px 6px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.1)',
     cursor: 'pointer',
   },
 }));
@@ -61,28 +61,28 @@ const ScreenshotImage = styled('img')(() => ({
   transition: 'all 0.2s ease',
 }));
 
-const UploadButton = styled(Button)(() => ({
-  backgroundColor: '#3b82f6',
+const UploadButton = styled(Button)(({ theme }) => ({
+  backgroundColor: theme.palette.primary.main,
   color: '#ffffff',
   padding: '8px 16px',
   textTransform: 'none',
   borderRadius: '8px',
-  boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+  boxShadow: theme.palette.mode === 'dark' ? '0 1px 2px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)',
   transition: 'all 0.2s ease',
   fontSize: '13px',
   fontWeight: 500,
   '&:hover': {
-    backgroundColor: '#2563eb',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+    backgroundColor: theme.palette.primary.dark,
+    boxShadow: theme.palette.mode === 'dark' ? '0 2px 4px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.15)',
     transform: 'translateY(-1px)',
   },
   '&:active': {
     transform: 'translateY(0)',
-    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    boxShadow: theme.palette.mode === 'dark' ? '0 1px 2px rgba(0,0,0,0.2)' : '0 1px 2px rgba(0,0,0,0.1)',
   },
   '&.Mui-disabled': {
-    backgroundColor: '#e0e0e0',
-    color: '#9e9e9e',
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.12)' : '#e0e0e0',
+    color: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : '#9e9e9e',
     boxShadow: 'none',
   },
   '& .MuiButton-startIcon': {
