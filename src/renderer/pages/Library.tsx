@@ -84,6 +84,28 @@ const GamesGrid = styled(Box)(() => ({
   padding: '0 8px',
 }));
 
+const EmptyFavorites = styled(Box)(() => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '32px',
+  color: '#666666',
+  backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  borderRadius: '4px',
+  '& .MuiSvgIcon-root': {
+    fontSize: 48,
+    marginBottom: 16,
+    opacity: 0.5,
+  },
+}));
+
+const EmptyText = styled(Typography)(() => ({
+  fontSize: '14px',
+  textAlign: 'center',
+  lineHeight: 1.5,
+}));
+
 // 模拟游戏数据
 const mockGames = [
   {
@@ -142,14 +164,28 @@ interface LibraryProps {
 
 const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
   const navigate = useNavigate();
-  const filteredGames = mockGames.filter(game => 
+  const [games, setGames] = React.useState(mockGames);
+  
+  const filteredGames = games.filter(game => 
     game.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const favorites = filteredGames.filter(game => game.favorite);
+  const nonFavorites = filteredGames.filter(game => !game.favorite);
 
   const handleGameClick = (gameId: number, gameName: string) => {
     navigate(`/screenshots/${gameId}`);
+  };
+
+  const handleFavoriteClick = (event: React.MouseEvent, gameId: number) => {
+    event.stopPropagation(); // 阻止事件冒泡到卡片
+    setGames(prevGames =>
+      prevGames.map(game =>
+        game.id === gameId
+          ? { ...game, favorite: !game.favorite }
+          : game
+      )
+    );
   };
 
   const renderGameCard = (game: typeof mockGames[0]) => (
@@ -161,7 +197,10 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
         alt={game.name}
       />
       <GameTitle>{game.name}</GameTitle>
-      <FavoriteButton favorite={game.favorite}>
+      <FavoriteButton 
+        favorite={game.favorite}
+        onClick={(e) => handleFavoriteClick(e, game.id)}
+      >
         <FavoriteIcon sx={{ fontSize: 18 }} />
       </FavoriteButton>
     </GameCard>
@@ -171,15 +210,25 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
     <Box>
       <Section>
         <SectionTitle>收藏夹</SectionTitle>
-        <GamesGrid>
-          {favorites.map(renderGameCard)}
-        </GamesGrid>
+        {favorites.length > 0 ? (
+          <GamesGrid>
+            {favorites.map(renderGameCard)}
+          </GamesGrid>
+        ) : (
+          <EmptyFavorites>
+            <FavoriteIcon />
+            <EmptyText>
+              收藏夹还是空的呢<br />
+              点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧
+            </EmptyText>
+          </EmptyFavorites>
+        )}
       </Section>
 
       <Section>
         <SectionTitle>所有游戏</SectionTitle>
         <GamesGrid>
-          {filteredGames.map(renderGameCard)}
+          {nonFavorites.map(renderGameCard)}
         </GamesGrid>
       </Section>
     </Box>
