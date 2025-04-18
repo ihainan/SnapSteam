@@ -526,7 +526,7 @@ const App: React.FC = () => {
                   <Search />
                 </SearchIconWrapper>
                 <StyledInputBase
-                  placeholder="搜索游戏..."
+                  placeholder={t.library.searchPlaceholder}
                   value={searchTerm}
                   onChange={handleSearchChange}
                 />

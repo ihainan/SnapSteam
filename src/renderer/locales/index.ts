@@ -30,7 +30,8 @@ export const translations = {
       allGames: '已安装游戏',
       recentlyPlayed: '最近游玩',
       emptyFavorites: '收藏夹还是空的呢\n点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧',
-      refresh: '刷新游戏库'
+      refresh: '刷新游戏库',
+      searchPlaceholder: '搜索游戏...'
     },
     screenshotManager: {
       addScreenshot: '导入截图',
@@ -74,7 +75,8 @@ export const translations = {
       allGames: 'Installed Games',
       recentlyPlayed: 'Recently Played',
       emptyFavorites: 'Your favorites list is empty\nClick the favorite icon on the top right of game cards to add games here',
-      refresh: 'Refresh Library'
+      refresh: 'Refresh Library',
+      searchPlaceholder: 'Search games...'
     },
     screenshotManager: {
       addScreenshot: 'Import Screenshot',
