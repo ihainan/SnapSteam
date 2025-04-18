@@ -23,7 +23,7 @@ export const translations = {
       emptyFavorites: '收藏夹还是空的呢\n点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧'
     },
     screenshotManager: {
-      addScreenshot: '添加截图',
+      addScreenshot: '导入截图',
       dragAndDrop: '拖拽图片到这里',
       orClick: '或者点击选择图片',
       cancel: '取消',
@@ -56,7 +56,7 @@ export const translations = {
       emptyFavorites: 'Your favorites list is empty\nClick the favorite icon on the top right of game cards to add games here'
     },
     screenshotManager: {
-      addScreenshot: 'Add Screenshot',
+      addScreenshot: 'Import Screenshot',
       dragAndDrop: 'Drag and drop images here',
       orClick: 'or click to select images',
       cancel: 'Cancel',
