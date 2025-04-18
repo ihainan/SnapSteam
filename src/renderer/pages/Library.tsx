@@ -51,15 +51,19 @@ const SectionTitle = styled(Typography)(() => ({
   borderBottom: '1px solid rgba(255,255,255,0.1)',
 }));
 
+const Section = styled(Box)(() => ({
+  marginBottom: '16px',
+  '&:last-child': {
+    marginBottom: 0,
+  },
+}));
+
 const GridContainer = styled(Grid)(() => ({
-  marginLeft: '0',
   width: '100%',
-  padding: '0 8px',
 }));
 
 const ContentWrapper = styled(Box)(() => ({
-  marginLeft: '-8px',
-  width: 'calc(100% + 8px)',
+  padding: '0 8px',
 }));
 
 // 模拟游戏数据
@@ -119,10 +123,10 @@ const Library: React.FC = () => {
   const allGames = mockGames;
 
   return (
-    <ContentWrapper>
-      <Box sx={{ mb: 2 }}>
+    <Box>
+      <Section>
         <SectionTitle>Favorites</SectionTitle>
-        <GridContainer container spacing={1}>
+        <Grid container spacing={1} sx={{ px: 0.5 }}>
           {favorites.map((game) => (
             <Grid item xs={12} sm={4} md={3} lg={2} xl={1.7} key={game.id}>
               <GameCard>
@@ -141,12 +145,12 @@ const Library: React.FC = () => {
               </GameCard>
             </Grid>
           ))}
-        </GridContainer>
-      </Box>
+        </Grid>
+      </Section>
 
-      <Box>
+      <Section>
         <SectionTitle>All Games</SectionTitle>
-        <GridContainer container spacing={1}>
+        <Grid container spacing={1} sx={{ px: 0.5 }}>
           {allGames.map((game) => (
             <Grid item xs={12} sm={4} md={3} lg={2} xl={1.7} key={game.id}>
               <GameCard>
@@ -165,9 +169,9 @@ const Library: React.FC = () => {
               </GameCard>
             </Grid>
           ))}
-        </GridContainer>
-      </Box>
-    </ContentWrapper>
+        </Grid>
+      </Section>
+    </Box>
   );
 };
 
