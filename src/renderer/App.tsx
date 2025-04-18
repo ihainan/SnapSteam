@@ -34,6 +34,32 @@ const mockUsers = [
   { id: 3, name: "用户3", avatar: null },
 ];
 
+// 模拟游戏数据
+interface Game {
+  id: number;
+  name: string;
+  coverUrl: string;
+  favorite: boolean;
+}
+
+const mockGames: Record<number, Game[]> = {
+  1: [
+    { id: 1, name: "Half-Life 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/220/header.jpg", favorite: true },
+    { id: 2, name: "Portal 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg", favorite: false },
+    { id: 3, name: "Team Fortress 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg", favorite: true },
+  ],
+  2: [
+    { id: 4, name: "Counter-Strike 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg", favorite: true },
+    { id: 5, name: "Dota 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg", favorite: false },
+    { id: 6, name: "Left 4 Dead 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/550/header.jpg", favorite: true },
+  ],
+  3: [
+    { id: 7, name: "Grand Theft Auto V", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg", favorite: true },
+    { id: 8, name: "The Witcher 3", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg", favorite: false },
+    { id: 9, name: "Red Dead Redemption 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg", favorite: true },
+  ],
+};
+
 // 自定义搜索框样式
 const SearchBox = styled('div')(({ theme }) => ({
   position: 'relative',
@@ -121,6 +147,7 @@ const App: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentUser, setCurrentUser] = useState(mockUsers[0]);
   const [error, setError] = useState<string | null>(null);
+  const [games, setGames] = useState(mockGames[1]); // 初始化为第一个用户的游戏库
 
   // 从主进程加载保存的用户选择
   useEffect(() => {
@@ -130,6 +157,7 @@ const App: React.FC = () => {
         const user = mockUsers.find(u => u.id === savedUserId);
         if (user) {
           setCurrentUser(user);
+          setGames(mockGames[user.id]); // 加载相应用户的游戏库
         }
       }
     };
@@ -201,6 +229,7 @@ const App: React.FC = () => {
 
   const handleUserChange = (user: typeof mockUsers[0]) => {
     setCurrentUser(user);
+    setGames(mockGames[user.id]); // 切换用户时更新游戏库
     // 保存用户选择到主进程
     ipcRenderer.send('set-store-value', { key: 'currentUserId', value: user.id });
     handleUserMenuClose();
@@ -398,7 +427,7 @@ const App: React.FC = () => {
           )}
 
           <Routes>
-            <Route path="/" element={<Library searchTerm={searchTerm} />} />
+            <Route path="/" element={<Library searchTerm={searchTerm} games={games} setGames={setGames} />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/screenshots/:gameId" element={<ScreenshotManager gameId={1} gameName="Half-Life 2" />} />
           </Routes>

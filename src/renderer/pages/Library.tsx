@@ -119,66 +119,25 @@ const EmptyText = styled(Typography)(({ theme }) => ({
   whiteSpace: 'pre-line',
 }));
 
-// 模拟游戏数据
-const mockGames = [
-  {
-    id: 1,
-    name: 'Half-Life 2',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/220/header.jpg',
-    favorite: true,
-  },
-  {
-    id: 2,
-    name: 'Stardew Valley',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/413150/header.jpg',
-    favorite: true,
-  },
-  {
-    id: 3,
-    name: 'Counter-Strike',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/730/header.jpg',
-    favorite: false,
-  },
-  {
-    id: 4,
-    name: 'The Elder Scrolls V: Skyrim',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/489830/header.jpg',
-    favorite: true,
-  },
-  {
-    id: 5,
-    name: 'Factorio',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/427520/header.jpg',
-    favorite: false,
-  },
-  {
-    id: 6,
-    name: 'Civilization VI',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/289070/header.jpg',
-    favorite: false,
-  },
-  {
-    id: 7,
-    name: 'Hades',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/1145360/header.jpg',
-    favorite: true,
-  },
-  {
-    id: 8,
-    name: 'Terraria',
-    coverUrl: 'https://cdn.cloudflare.steamstatic.com/steam/apps/105600/header.jpg',
-    favorite: false,
-  },
-];
-
 interface LibraryProps {
   searchTerm: string;
+  games: {
+    id: number;
+    name: string;
+    coverUrl: string;
+    favorite: boolean;
+  }[];
+  setGames: React.Dispatch<React.SetStateAction<{
+    id: number;
+    name: string;
+    coverUrl: string;
+    favorite: boolean;
+  }[]>>;
 }
 
-const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
+const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const [games, setGames] = React.useState(mockGames);
   
   const t = translations[language];
   
@@ -204,7 +163,7 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
     );
   };
 
-  const renderGameCard = (game: typeof mockGames[0]) => (
+  const renderGameCard = (game: typeof games[0]) => (
     <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
       <CardMedia
         component="img"
