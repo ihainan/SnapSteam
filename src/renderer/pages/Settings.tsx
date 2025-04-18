@@ -9,49 +9,49 @@ const defaultSteamPath = process.platform === 'darwin'
   : '~/.local/share/Steam';
 
 const SectionTitle = styled(Typography)(() => ({
-  color: '#ffffff',
+  color: '#333333',
   fontSize: '24px',
   fontWeight: 500,
   marginBottom: '16px',
   paddingBottom: '8px',
-  borderBottom: '1px solid rgba(255,255,255,0.1)',
+  borderBottom: '1px solid #e0e0e0',
 }));
 
 const SubTitle = styled(Typography)(() => ({
-  color: '#959da6',
+  color: '#666666',
   fontSize: '14px',
   marginBottom: '12px',
 }));
 
 const StyledTextField = styled(TextField)(() => ({
   '& .MuiOutlinedInput-root': {
-    color: '#ffffff',
-    backgroundColor: '#2a475e',
+    color: '#333333',
+    backgroundColor: '#f5f5f5',
     '& fieldset': {
-      borderColor: 'rgba(255,255,255,0.1)',
+      borderColor: '#e0e0e0',
     },
     '&:hover fieldset': {
-      borderColor: '#66c0f4',
+      borderColor: '#4285f4',
     },
     '&.Mui-focused fieldset': {
-      borderColor: '#66c0f4',
+      borderColor: '#4285f4',
     },
   },
   '& .MuiInputLabel-root': {
-    color: '#959da6',
+    color: '#666666',
     '&.Mui-focused': {
-      color: '#66c0f4',
+      color: '#4285f4',
     },
   },
 }));
 
 const StyledButton = styled(Button)(() => ({
-  backgroundColor: '#2a475e',
+  backgroundColor: '#4285f4',
   color: '#ffffff',
   padding: '6px 16px',
   textTransform: 'none',
   '&:hover': {
-    backgroundColor: '#66c0f4',
+    backgroundColor: '#3367d6',
   },
 }));
 
@@ -69,18 +69,18 @@ const Settings: React.FC = () => {
 
   return (
     <Box>
-      <SectionTitle>Settings</SectionTitle>
+      <SectionTitle>设置</SectionTitle>
 
       <Box sx={{ maxWidth: 800 }}>
         <SubTitle>
-          Steam Installation
+          Steam 安装路径
         </SubTitle>
         
         <Box sx={{ display: 'flex', gap: 1 }}>
           <StyledTextField
             fullWidth
             size="small"
-            placeholder="Steam installation path"
+            placeholder="Steam 安装路径"
             value={steamPath}
             onChange={handlePathChange}
           />
@@ -89,7 +89,7 @@ const Settings: React.FC = () => {
             onClick={handleBrowse}
             startIcon={<Folder />}
           >
-            Browse
+            浏览
           </StyledButton>
         </Box>
       </Box>

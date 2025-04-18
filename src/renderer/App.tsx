@@ -69,7 +69,6 @@ const App: React.FC = () => {
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
-    // TODO: 实现搜索过滤逻辑
   };
 
   const handleUserMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -85,9 +84,11 @@ const App: React.FC = () => {
     handleUserMenuClose();
   };
 
+  const showTopBar = location.pathname === '/';
+
   const menuItems = [
-    { text: 'Library', icon: <LibraryBooks />, path: '/' },
-    { text: 'Settings', icon: <Settings />, path: '/settings' },
+    { text: '游戏库', icon: <LibraryBooks />, path: '/' },
+    { text: '设置', icon: <Settings />, path: '/settings' },
   ];
 
   return (
@@ -102,7 +103,7 @@ const App: React.FC = () => {
             width: drawerWidth,
             boxSizing: 'border-box',
             backgroundColor: '#f5f5f5',
-            color: '#666666',
+            color: '#333333',
             borderRight: '1px solid #e0e0e0',
             paddingTop: '8px',
           },
@@ -118,6 +119,7 @@ const App: React.FC = () => {
                 padding: '6px 12px',
                 margin: '1px 6px',
                 borderRadius: '4px',
+                color: '#333333',
                 '&.Mui-selected': {
                   backgroundColor: '#4285f4',
                   color: '#ffffff',
@@ -140,7 +142,7 @@ const App: React.FC = () => {
             >
               <ListItemIcon
                 sx={{
-                  color: '#666666',
+                  color: '#333333',
                   minWidth: '32px',
                   '& .MuiSvgIcon-root': {
                     fontSize: '20px',
@@ -173,69 +175,71 @@ const App: React.FC = () => {
           flexDirection: 'column'
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            padding: '12px 16px',
-            borderBottom: '1px solid #e0e0e0',
-          }}
-        >
-          <SearchBox>
-            <SearchIconWrapper>
-              <Search fontSize="small" />
-            </SearchIconWrapper>
-            <StyledInputBase
-              placeholder="搜索游戏..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-            />
-          </SearchBox>
-          
-          <IconButton
-            onClick={handleUserMenuClick}
-            size="small"
-            sx={{ padding: 0 }}
-          >
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                backgroundColor: '#4285f4',
-                fontSize: '14px',
-              }}
-            >
-              {currentUser.name[0]}
-            </Avatar>
-          </IconButton>
-          
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleUserMenuClose}
-            PaperProps={{
-              sx: {
-                minWidth: '120px',
-                marginTop: '4px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              }
+        {showTopBar && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              padding: '12px 16px',
+              borderBottom: '1px solid #e0e0e0',
             }}
           >
-            {mockUsers.map((user) => (
-              <MenuItem
-                key={user.id}
-                onClick={() => handleUserChange(user)}
+            <SearchBox>
+              <SearchIconWrapper>
+                <Search fontSize="small" />
+              </SearchIconWrapper>
+              <StyledInputBase
+                placeholder="搜索游戏..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+              />
+            </SearchBox>
+            
+            <IconButton
+              onClick={handleUserMenuClick}
+              size="small"
+              sx={{ padding: 0 }}
+            >
+              <Avatar
                 sx={{
-                  fontSize: '13px',
-                  padding: '8px 16px',
+                  width: 32,
+                  height: 32,
+                  backgroundColor: '#4285f4',
+                  fontSize: '14px',
                 }}
               >
-                {user.name}
-              </MenuItem>
-            ))}
-          </Menu>
-        </Box>
+                {currentUser.name[0]}
+              </Avatar>
+            </IconButton>
+            
+            <Menu
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleUserMenuClose}
+              PaperProps={{
+                sx: {
+                  minWidth: '120px',
+                  marginTop: '4px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }
+              }}
+            >
+              {mockUsers.map((user) => (
+                <MenuItem
+                  key={user.id}
+                  onClick={() => handleUserChange(user)}
+                  sx={{
+                    fontSize: '13px',
+                    padding: '8px 16px',
+                  }}
+                >
+                  {user.name}
+                </MenuItem>
+              ))}
+            </Menu>
+          </Box>
+        )}
 
         <Box sx={{ padding: '16px', flexGrow: 1 }}>
           <Routes>

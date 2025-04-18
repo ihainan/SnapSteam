@@ -4,7 +4,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const GameCard = styled(Card)(() => ({
   backgroundColor: 'transparent',
-  color: '#ffffff',
+  color: '#333333',
   transition: 'transform 0.15s',
   position: 'relative',
   borderRadius: '2px',
@@ -28,6 +28,7 @@ const GameTitle = styled(Typography)(() => ({
   fontSize: '12px',
   fontWeight: 500,
   lineHeight: 1.2,
+  color: '#ffffff',
 }));
 
 const FavoriteButton = styled(Box)(() => ({
@@ -42,13 +43,13 @@ const FavoriteButton = styled(Box)(() => ({
 }));
 
 const SectionTitle = styled(Typography)(() => ({
-  color: '#ffffff',
+  color: '#333333',
   fontSize: '16px',
   fontWeight: 500,
   marginBottom: '8px',
   paddingBottom: '4px',
   paddingLeft: '8px',
-  borderBottom: '1px solid rgba(255,255,255,0.1)',
+  borderBottom: '1px solid #e0e0e0',
 }));
 
 const Section = styled(Box)(() => ({
