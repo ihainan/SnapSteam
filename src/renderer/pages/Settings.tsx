@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
+import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Alert } from '@mui/material';
 import { Folder } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
+import { ipcRenderer } from 'electron';
 
 const defaultSteamPath = process.platform === 'darwin' 
   ? '~/Library/Application Support/Steam'
@@ -68,9 +69,11 @@ const Settings: React.FC = () => {
   const { themeMode, setThemeMode } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [steamPath, setSteamPath] = useState(defaultSteamPath);
+  const [pathError, setPathError] = useState<string | null>(null);
 
   const handlePathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSteamPath(event.target.value);
+    setPathError(null);
   };
 
   const handleThemeChange = (event: SelectChangeEvent) => {
@@ -81,9 +84,24 @@ const Settings: React.FC = () => {
     setLanguage(event.target.value as 'zh' | 'en');
   };
 
-  const handleBrowse = () => {
-    // TODO: 实现文件夹选择功能
-    console.log('Browse for Steam folder');
+  const handleBrowse = async () => {
+    try {
+      const result = await ipcRenderer.invoke('open-directory-dialog');
+      if (!result.canceled && result.filePaths.length > 0) {
+        const selectedPath = result.filePaths[0];
+        const isValid = await ipcRenderer.invoke('validate-steam-path', selectedPath);
+        
+        if (isValid) {
+          setSteamPath(selectedPath);
+          setPathError(null);
+        } else {
+          setPathError('选择的路径不是有效的 Steam 安装路径');
+        }
+      }
+    } catch (error) {
+      console.error('Error opening directory dialog:', error);
+      setPathError('打开文件夹对话框时出错');
+    }
   };
 
   const t = translations[language];
@@ -126,21 +144,25 @@ const Settings: React.FC = () => {
           {t.settings.steamPath}
         </SubTitle>
         
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <StyledTextField
-            fullWidth
-            size="small"
-            placeholder={t.settings.steamPath}
-            value={steamPath}
-            onChange={handlePathChange}
-          />
-          <StyledButton
-            variant="contained"
-            onClick={handleBrowse}
-            startIcon={<Folder />}
-          >
-            {t.settings.browse}
-          </StyledButton>
+        <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <StyledTextField
+              fullWidth
+              size="small"
+              placeholder={t.settings.steamPath}
+              value={steamPath}
+              onChange={handlePathChange}
+              error={!!pathError}
+              helperText={pathError}
+            />
+            <StyledButton
+              variant="contained"
+              onClick={handleBrowse}
+              startIcon={<Folder />}
+            >
+              {t.settings.browse}
+            </StyledButton>
+          </Box>
         </Box>
       </Box>
     </Box>
