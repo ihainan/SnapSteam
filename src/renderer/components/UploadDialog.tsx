@@ -10,7 +10,10 @@ import {
   IconButton,
   styled,
 } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../locales';
 
 interface DropZoneProps {
   isDragActive?: boolean;
@@ -90,8 +93,11 @@ interface UploadDialogProps {
 }
 
 const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) => {
+  const { language } = useLanguage();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragActive, setIsDragActive] = useState(false);
+
+  const t = translations[language];
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -152,7 +158,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
         fontSize: '20px',
         fontWeight: 600,
       }}>
-        添加截图
+        {t.screenshotManager.addScreenshot}
       </DialogTitle>
       <DialogContent sx={{ padding: '0' }}>
         <input
@@ -172,10 +178,10 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
           >
             <CloudUploadIcon sx={{ fontSize: 48, color: '#4285f4', mb: 2 }} />
             <Typography variant="h6" gutterBottom>
-              拖拽图片到这里
+              {t.screenshotManager.dragAndDrop}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              或者点击选择图片
+              {t.screenshotManager.orClick}
             </Typography>
           </DropZone>
         </label>
@@ -211,7 +217,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
             },
           }}
         >
-          取消
+          {t.screenshotManager.cancel}
         </Button>
         <Button
           variant="contained"
@@ -232,7 +238,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
             },
           }}
         >
-          导入截图
+          {t.screenshotManager.import}
         </Button>
       </DialogActions>
     </Dialog>

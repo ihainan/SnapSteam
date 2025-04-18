@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import UploadDialog from '../components/UploadDialog';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../locales';
 
 // 使用实际截图数据
 const mockScreenshots = [
@@ -99,10 +101,13 @@ interface ScreenshotManagerProps {
 }
 
 const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName }) => {
+  const { language } = useLanguage();
   const [screenshots, setScreenshots] = useState(mockScreenshots);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+
+  const t = translations[language];
 
   const handleScreenshotClick = (url: string) => {
     // 使用系统图片浏览器打开
@@ -135,7 +140,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <SectionTitle>{gameName} - 截图</SectionTitle>
+        <SectionTitle>{gameName} - {t.screenshotManager.addScreenshot}</SectionTitle>
         <Box>
           <UploadButton
             variant="contained"
@@ -143,7 +148,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
             onClick={() => setIsUploadDialogOpen(true)}
             disabled={isUploading}
           >
-            添加截图
+            {t.screenshotManager.addScreenshot}
           </UploadButton>
         </Box>
       </Box>
@@ -152,7 +157,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
         <Box sx={{ mb: 3 }}>
           <LinearProgress variant="determinate" value={uploadProgress} />
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            上传中... {uploadProgress}%
+            {t.screenshotManager.uploading} {uploadProgress}%
           </Typography>
         </Box>
       )}

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { Folder } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../locales';
 
 const defaultSteamPath = process.platform === 'darwin' 
   ? '~/Library/Application Support/Steam'
@@ -64,6 +66,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const Settings: React.FC = () => {
   const { themeMode, setThemeMode } = useTheme();
+  const { language, setLanguage } = useLanguage();
   const [steamPath, setSteamPath] = useState(defaultSteamPath);
 
   const handlePathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,42 +77,60 @@ const Settings: React.FC = () => {
     setThemeMode(event.target.value as 'light' | 'dark' | 'system');
   };
 
+  const handleLanguageChange = (event: SelectChangeEvent) => {
+    setLanguage(event.target.value as 'zh' | 'en');
+  };
+
   const handleBrowse = () => {
     // TODO: 实现文件夹选择功能
     console.log('Browse for Steam folder');
   };
 
+  const t = translations[language];
+
   return (
     <Box>
-      <SectionTitle>设置</SectionTitle>
+      <SectionTitle>{t.settings.title}</SectionTitle>
 
       <Box sx={{ maxWidth: 800 }}>
         <SubTitle>
-          外观
+          {t.settings.appearance}
         </SubTitle>
         
         <FormControl fullWidth size="small" sx={{ mb: 3 }}>
-          <InputLabel>主题</InputLabel>
+          <InputLabel>{t.settings.theme}</InputLabel>
           <Select
             value={themeMode}
-            label="主题"
+            label={t.settings.theme}
             onChange={handleThemeChange}
           >
-            <MenuItem value="system">跟随系统</MenuItem>
-            <MenuItem value="light">亮色</MenuItem>
-            <MenuItem value="dark">暗色</MenuItem>
+            <MenuItem value="system">{t.settings.themeOptions.system}</MenuItem>
+            <MenuItem value="light">{t.settings.themeOptions.light}</MenuItem>
+            <MenuItem value="dark">{t.settings.themeOptions.dark}</MenuItem>
+          </Select>
+        </FormControl>
+
+        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+          <InputLabel>{t.settings.language}</InputLabel>
+          <Select
+            value={language}
+            label={t.settings.language}
+            onChange={handleLanguageChange}
+          >
+            <MenuItem value="zh">{t.settings.languageOptions.zh}</MenuItem>
+            <MenuItem value="en">{t.settings.languageOptions.en}</MenuItem>
           </Select>
         </FormControl>
 
         <SubTitle>
-          Steam 安装路径
+          {t.settings.steamPath}
         </SubTitle>
         
         <Box sx={{ display: 'flex', gap: 1 }}>
           <StyledTextField
             fullWidth
             size="small"
-            placeholder="Steam 安装路径"
+            placeholder={t.settings.steamPath}
             value={steamPath}
             onChange={handlePathChange}
           />
@@ -118,7 +139,7 @@ const Settings: React.FC = () => {
             onClick={handleBrowse}
             startIcon={<Folder />}
           >
-            浏览
+            {t.settings.browse}
           </StyledButton>
         </Box>
       </Box>

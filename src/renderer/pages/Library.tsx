@@ -2,6 +2,8 @@ import React from 'react';
 import { Box, Card, CardMedia, Typography, styled } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+import { translations } from '../locales';
 
 const GameCard = styled(Card)(() => ({
   backgroundColor: '#ffffff',
@@ -168,7 +170,10 @@ interface LibraryProps {
 
 const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [games, setGames] = React.useState(mockGames);
+  
+  const t = translations[language];
   
   const filteredGames = games.filter(game => 
     game.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -213,7 +218,7 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
   return (
     <Box>
       <Section>
-        <SectionTitle>收藏夹</SectionTitle>
+        <SectionTitle>{t.library.favorites}</SectionTitle>
         {favorites.length > 0 ? (
           <GamesGrid>
             {favorites.map(renderGameCard)}
@@ -222,15 +227,14 @@ const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
           <EmptyFavorites>
             <FavoriteIcon />
             <EmptyText>
-              收藏夹还是空的呢<br />
-              点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧
+              {t.library.emptyFavorites}
             </EmptyText>
           </EmptyFavorites>
         )}
       </Section>
 
       <Section>
-        <SectionTitle>所有游戏</SectionTitle>
+        <SectionTitle>{t.library.allGames}</SectionTitle>
         <GamesGrid>
           {nonFavorites.map(renderGameCard)}
         </GamesGrid>

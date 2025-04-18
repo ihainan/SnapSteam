@@ -6,7 +6,7 @@ dist/
 build/
 
 # IDE 和编辑器
-.idea/
+.idea/  
 .vscode/
 *.swp
 *.swo

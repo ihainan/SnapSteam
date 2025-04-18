@@ -19,6 +19,10 @@ import { LibraryBooks, Settings, Search } from '@mui/icons-material';
 import Library from './pages/Library';
 import SettingsPage from './pages/Settings';
 import ScreenshotManager from './pages/ScreenshotManager';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { LanguageProvider } from './contexts/LanguageContext';
+import { translations } from './locales';
+import { useLanguage } from './contexts/LanguageContext';
 
 const drawerWidth = 180;
 
@@ -63,12 +67,15 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentUser, setCurrentUser] = useState(mockUsers[0]);
+
+  const t = translations[language];
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
@@ -90,8 +97,8 @@ const App: React.FC = () => {
   const showTopBar = location.pathname === '/';
 
   const menuItems = [
-    { text: '游戏库', icon: <LibraryBooks />, path: '/' },
-    { text: '设置', icon: <Settings />, path: '/settings' },
+    { text: t.library.allGames, icon: <LibraryBooks />, path: '/' },
+    { text: t.settings.title, icon: <Settings />, path: '/settings' },
   ];
 
   return (
@@ -291,6 +298,16 @@ const App: React.FC = () => {
         </Box>
       </Box>
     </Box>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 };
 
