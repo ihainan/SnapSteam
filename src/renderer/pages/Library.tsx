@@ -1,6 +1,7 @@
 import React from 'react';
-import { Box, Card, CardMedia, Typography, styled } from '@mui/material';
+import { Box, Card, CardMedia, Typography, styled, Fab } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
@@ -120,6 +121,37 @@ const EmptyText = styled(Typography)(({ theme }) => ({
   whiteSpace: 'pre-line',
 }));
 
+const RefreshButton = styled(Fab)(({ theme }) => ({
+  position: 'fixed',
+  bottom: '24px',
+  right: '24px',
+  backgroundColor: theme.palette.primary.main,
+  color: theme.palette.primary.contrastText,
+  boxShadow: theme.palette.mode === 'dark'
+    ? '0 4px 12px rgba(0, 0, 0, 0.3)'
+    : '0 4px 12px rgba(0, 0, 0, 0.15)',
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  '&:hover': {
+    backgroundColor: theme.palette.primary.dark,
+    transform: 'translateY(-2px)',
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 6px 16px rgba(0, 0, 0, 0.4)'
+      : '0 6px 16px rgba(0, 0, 0, 0.2)',
+  },
+  '&:active': {
+    transform: 'translateY(0)',
+    boxShadow: theme.palette.mode === 'dark'
+      ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+      : '0 2px 8px rgba(0, 0, 0, 0.15)',
+  },
+  '& .MuiSvgIcon-root': {
+    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  '&:hover .MuiSvgIcon-root': {
+    transform: 'rotate(180deg)',
+  },
+}));
+
 interface Game {
   id: number;
   name: string;
@@ -177,6 +209,29 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
     }
   };
 
+  const handleRefreshGames = async () => {
+    const userId = games[0]?.userId;
+    if (userId) {
+      // 从 Steam 获取最新的游戏库数据
+      const userGames = await ipcRenderer.invoke('get-user-games', userId);
+      
+      // 从持久化存储中获取收藏状态
+      const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${userId}`);
+      
+      if (savedGames && Array.isArray(savedGames)) {
+        // 合并 Steam 游戏数据和保存的收藏状态
+        const mergedGames = userGames.map((game: Game) => {
+          const savedGame = savedGames.find((g: Game) => g.id === game.id);
+          return savedGame ? { ...game, favorite: savedGame.favorite } : game;
+        });
+        
+        setGames(mergedGames);
+      } else {
+        setGames(userGames);
+      }
+    }
+  };
+
   const renderGameCard = (game: typeof games[0]) => (
     <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
       <CardMedia
@@ -219,6 +274,13 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
           {nonFavorites.map(renderGameCard)}
         </GamesGrid>
       </Section>
+
+      <RefreshButton
+        onClick={handleRefreshGames}
+        title={t.library.refresh}
+      >
+        <RefreshIcon />
+      </RefreshButton>
     </Box>
   );
 };

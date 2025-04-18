@@ -24,7 +24,8 @@ export const translations = {
     library: {
       favorites: '收藏夹',
       allGames: '所有游戏',
-      emptyFavorites: '收藏夹还是空的呢\n点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧'
+      emptyFavorites: '收藏夹还是空的呢\n点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧',
+      refresh: '刷新游戏库'
     },
     screenshotManager: {
       addScreenshot: '导入截图',
@@ -61,7 +62,8 @@ export const translations = {
     library: {
       favorites: 'Favorites',
       allGames: 'All Games',
-      emptyFavorites: 'Your favorites list is empty\nClick the favorite icon on the top right of game cards to add games here'
+      emptyFavorites: 'Your favorites list is empty\nClick the favorite icon on the top right of game cards to add games here',
+      refresh: 'Refresh Library'
     },
     screenshotManager: {
       addScreenshot: 'Import Screenshot',
