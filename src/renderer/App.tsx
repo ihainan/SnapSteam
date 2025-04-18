@@ -141,14 +141,30 @@ class ErrorBoundary extends React.Component<
 }
 
 const App: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentUser, setCurrentUser] = useState(mockUsers[0]);
-  const [error, setError] = useState<string | null>(null);
-  const [games, setGames] = useState<Game[]>([]);
+  const [games, setGames] = useState<Game[]>(mockGames[1]);
+  const [isSteamPathValid, setIsSteamPathValid] = useState<boolean | null>(null);
+  const { language } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 检查 Steam 路径是否有效
+  useEffect(() => {
+    const checkSteamPath = async () => {
+      const steamPath = await ipcRenderer.invoke('get-store-value', 'steamPath');
+      const isValid = await ipcRenderer.invoke('validate-steam-path', steamPath);
+      setIsSteamPathValid(isValid);
+      
+      // 如果路径无效且不在设置页面，则跳转到设置页面
+      if (!isValid && location.pathname !== '/settings') {
+        navigate('/settings');
+      }
+    };
+
+    checkSteamPath();
+  }, [location.pathname, navigate]);
 
   // 从主进程加载保存的用户选择和游戏收藏状态
   useEffect(() => {
@@ -261,7 +277,12 @@ const App: React.FC = () => {
   const showTopBar = location.pathname === '/';
 
   const menuItems = [
-    { text: t.library.allGames, icon: <LibraryBooks />, path: '/' },
+    { 
+      text: t.library.allGames, 
+      icon: <LibraryBooks />, 
+      path: '/',
+      disabled: !isSteamPathValid // 如果 Steam 路径无效，禁用游戏库选项
+    },
     { text: t.settings.title, icon: <Settings />, path: '/settings' },
   ];
 
@@ -295,6 +316,7 @@ const App: React.FC = () => {
                 key={item.text}
                 onClick={() => navigate(item.path)}
                 selected={location.pathname === item.path}
+                disabled={item.disabled}
                 sx={{
                   padding: '8px 16px',
                   margin: '2px 8px',
@@ -318,6 +340,10 @@ const App: React.FC = () => {
                     '& .MuiListItemIcon-root': {
                       color: theme => theme.palette.text.primary,
                     },
+                  },
+                  '&.Mui-disabled': {
+                    opacity: 0.5,
+                    cursor: 'not-allowed',
                   },
                 }}
               >

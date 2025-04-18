@@ -9,8 +9,8 @@ import { ipcRenderer } from 'electron';
 const defaultSteamPath = process.platform === 'darwin' 
   ? '~/Library/Application Support/Steam'
   : process.platform === 'win32'
-  ? 'C:\\Program Files (x86)\\Steam'
-  : '~/.local/share/Steam';
+  ? 'C:\\Program Files (x86)\\Steam\\userdata'
+  : '~/.local/share/Steam/userdata';
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
@@ -70,6 +70,7 @@ const Settings: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const [steamPath, setSteamPath] = useState(defaultSteamPath);
   const [pathError, setPathError] = useState<string | null>(null);
+  const [isPathValid, setIsPathValid] = useState<boolean | null>(null);
 
   // 从主进程加载保存的配置
   useEffect(() => {
@@ -80,7 +81,11 @@ const Settings: React.FC = () => {
       
       if (savedTheme) setThemeMode(savedTheme);
       if (savedLanguage) setLanguage(savedLanguage);
-      if (savedSteamPath) setSteamPath(savedSteamPath);
+      if (savedSteamPath) {
+        setSteamPath(savedSteamPath);
+        const isValid = await ipcRenderer.invoke('validate-steam-path', savedSteamPath);
+        setIsPathValid(isValid);
+      }
     };
     
     loadSettings();
@@ -115,7 +120,7 @@ const Settings: React.FC = () => {
           setPathError(null);
           ipcRenderer.send('set-store-value', { key: 'steamPath', value: selectedPath });
         } else {
-          setPathError('选择的路径不是有效的 Steam 安装路径');
+          setPathError('选择的路径不是有效的 Steam 用户数据目录');
         }
       }
     } catch (error) {
@@ -131,6 +136,12 @@ const Settings: React.FC = () => {
       <SectionTitle>{t.settings.title}</SectionTitle>
 
       <Box sx={{ maxWidth: 800 }}>
+        {!isPathValid && (
+          <Alert severity="warning" sx={{ mb: 3 }}>
+            请设置有效的 Steam 用户数据目录以使用游戏库功能
+          </Alert>
+        )}
+
         <SubTitle>
           {t.settings.appearance}
         </SubTitle>
@@ -173,7 +184,7 @@ const Settings: React.FC = () => {
               value={steamPath}
               onChange={handlePathChange}
               error={!!pathError}
-              helperText={pathError}
+              helperText={pathError || "请选择 Steam 用户数据目录（通常包含 userdata 文件夹）"}
             />
             <StyledButton
               variant="contained"

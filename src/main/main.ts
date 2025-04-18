@@ -84,7 +84,7 @@ ipcMain.handle('open-directory-dialog', async () => {
   return result;
 });
 
-// 验证 Steam 安装路径
+// 验证 Steam 用户数据目录
 ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
   try {
     // 检查路径是否存在
@@ -97,28 +97,21 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
     if (platform === 'darwin') {
       // macOS 上的验证逻辑
       // 检查是否是 Steam 数据目录
-      const isDataDir = fs.existsSync(path.join(steamPath, 'steamapps')) &&
-                       fs.existsSync(path.join(steamPath, 'userdata'));
+      const isDataDir = fs.existsSync(path.join(steamPath, 'userdata')) &&
+                       fs.existsSync(path.join(steamPath, 'steamapps'));
       
-      // 检查是否是 Steam 应用程序
-      const isAppDir = steamPath.endsWith('Steam.app') &&
-                      fs.existsSync(path.join(steamPath, 'Contents', 'MacOS', 'steam'));
-      
-      return isDataDir || isAppDir;
+      return isDataDir;
     } else {
-      const requiredFiles = {
-        win32: ['steam.exe', 'steamapps'],
-        linux: ['steam', 'steamapps']
-      };
+      // Windows 和 Linux 上的验证逻辑
+      // 检查是否是 userdata 目录
+      const isUserDataDir = fs.existsSync(path.join(steamPath, 'userdata')) ||
+                          (fs.existsSync(steamPath) && 
+                           fs.readdirSync(steamPath).some((dir: string) => 
+                             fs.statSync(path.join(steamPath, dir)).isDirectory() && 
+                             /^\d+$/.test(dir)
+                           ));
       
-      const files = requiredFiles[platform as keyof typeof requiredFiles];
-      if (!files) return false;
-
-      // 检查所有必需的文件/文件夹是否存在
-      return files.every(file => {
-        const fullPath = path.join(steamPath, file);
-        return fs.existsSync(fullPath);
-      });
+      return isUserDataDir;
     }
   } catch (error) {
     console.error('Error validating Steam path:', error);
