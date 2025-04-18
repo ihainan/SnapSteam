@@ -10,8 +10,7 @@
     "build:main": "node scripts/build-main.js",
     "build:renderer": "webpack --config webpack.config.js",
     "watch": "webpack --config webpack.config.js --watch",
-    "dev:server": "node scripts/dev-server.js",
-    "dev": "concurrently \"npm run dev:server\" \"npm run start\""
+    "dev": "npm run build && npm run start"
   },
   "keywords": [],
   "author": "",
@@ -33,18 +32,14 @@
     "@types/node": "^20.11.30",
     "@types/react": "^18.2.67",
     "@types/react-dom": "^18.2.22",
-    "concurrently": "^8.2.2",
     "copy-webpack-plugin": "^13.0.0",
     "css-loader": "^6.10.0",
-    "express": "^5.1.0",
     "path-browserify": "^1.0.1",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.2",
     "webpack": "^5.91.0",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-middleware": "^7.4.2",
-    "webpack-dev-server": "^5.0.4",
-    "webpack-hot-middleware": "^2.26.1"
+    "webpack-dev-server": "^5.0.4"
   }
 }
