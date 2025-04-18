@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Card, CardMedia, Typography, styled } from '@mui/material';
+import { Box, Card, CardMedia, Typography, styled } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const GameCard = styled(Card)(() => ({
@@ -58,11 +58,10 @@ const Section = styled(Box)(() => ({
   },
 }));
 
-const GridContainer = styled(Grid)(() => ({
-  width: '100%',
-}));
-
-const ContentWrapper = styled(Box)(() => ({
+const GamesGrid = styled(Box)(() => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+  gap: '8px',
   padding: '0 8px',
 }));
 
@@ -118,58 +117,48 @@ const mockGames = [
   },
 ];
 
-const Library: React.FC = () => {
-  const favorites = mockGames.filter(game => game.favorite);
-  const allGames = mockGames;
+interface LibraryProps {
+  searchTerm: string;
+}
+
+const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
+  const filteredGames = mockGames.filter(game => 
+    game.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const favorites = filteredGames.filter(game => game.favorite);
+
+  const renderGameCard = (game: typeof mockGames[0]) => (
+    <GameCard key={game.id}>
+      <CardMedia
+        component="img"
+        height="120"
+        image={game.coverUrl}
+        alt={game.name}
+      />
+      <GameTitle>{game.name}</GameTitle>
+      {game.favorite && (
+        <FavoriteButton>
+          <FavoriteIcon sx={{ fontSize: 18 }} />
+        </FavoriteButton>
+      )}
+    </GameCard>
+  );
 
   return (
     <Box>
       <Section>
-        <SectionTitle>Favorites</SectionTitle>
-        <Grid container spacing={1} sx={{ px: 0.5 }}>
-          {favorites.map((game) => (
-            <Grid item xs={12} sm={4} md={3} lg={2} xl={1.7} key={game.id}>
-              <GameCard>
-                <CardMedia
-                  component="img"
-                  height="120"
-                  image={game.coverUrl}
-                  alt={game.name}
-                />
-                <GameTitle>{game.name}</GameTitle>
-                {game.favorite && (
-                  <FavoriteButton>
-                    <FavoriteIcon sx={{ fontSize: 18 }} />
-                  </FavoriteButton>
-                )}
-              </GameCard>
-            </Grid>
-          ))}
-        </Grid>
+        <SectionTitle>收藏夹</SectionTitle>
+        <GamesGrid>
+          {favorites.map(renderGameCard)}
+        </GamesGrid>
       </Section>
 
       <Section>
-        <SectionTitle>All Games</SectionTitle>
-        <Grid container spacing={1} sx={{ px: 0.5 }}>
-          {allGames.map((game) => (
-            <Grid item xs={12} sm={4} md={3} lg={2} xl={1.7} key={game.id}>
-              <GameCard>
-                <CardMedia
-                  component="img"
-                  height="120"
-                  image={game.coverUrl}
-                  alt={game.name}
-                />
-                <GameTitle>{game.name}</GameTitle>
-                {game.favorite && (
-                  <FavoriteButton>
-                    <FavoriteIcon sx={{ fontSize: 18 }} />
-                  </FavoriteButton>
-                )}
-              </GameCard>
-            </Grid>
-          ))}
-        </Grid>
+        <SectionTitle>所有游戏</SectionTitle>
+        <GamesGrid>
+          {filteredGames.map(renderGameCard)}
+        </GamesGrid>
       </Section>
     </Box>
   );
