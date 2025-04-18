@@ -5,13 +5,13 @@ import { LibraryBooks, Settings } from '@mui/icons-material';
 import Library from './pages/Library';
 import SettingsPage from './pages/Settings';
 
-const drawerWidth = 200;
+const drawerWidth = 180;
 
 const MainContent = styled(Box)(() => ({
   marginLeft: drawerWidth,
   backgroundColor: '#1b2838',
   minHeight: '100vh',
-  padding: '16px',
+  padding: '8px 8px 8px 4px',
 }));
 
 const StyledDrawer = styled(Drawer)(() => ({
@@ -20,17 +20,17 @@ const StyledDrawer = styled(Drawer)(() => ({
   '& .MuiDrawer-paper': {
     width: drawerWidth,
     boxSizing: 'border-box',
-    backgroundColor: '#1b2838',
+    backgroundColor: '#0e141d',
     color: '#959da6',
     borderRight: 'none',
-    paddingTop: '12px',
+    paddingTop: '8px',
   },
 }));
 
 const StyledListItemButton = styled(ListItemButton)(() => ({
-  padding: '8px 16px',
-  margin: '2px 8px',
-  borderRadius: '3px',
+  padding: '6px 12px',
+  margin: '1px 6px',
+  borderRadius: '2px',
   '&.Mui-selected': {
     backgroundColor: '#2f89bc',
     color: '#ffffff',
@@ -53,13 +53,17 @@ const StyledListItemButton = styled(ListItemButton)(() => ({
 
 const StyledListItemIcon = styled(ListItemIcon)(() => ({
   color: '#959da6',
-  minWidth: '36px',
+  minWidth: '32px',
+  '& .MuiSvgIcon-root': {
+    fontSize: '20px',
+  },
 }));
 
 const StyledListItemText = styled(ListItemText)(() => ({
   '& .MuiListItemText-primary': {
-    fontSize: '14px',
+    fontSize: '13px',
   },
+  marginLeft: '-8px',
 }));
 
 const App: React.FC = () => {

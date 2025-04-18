@@ -5,12 +5,12 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 const GameCard = styled(Card)(() => ({
   backgroundColor: 'transparent',
   color: '#ffffff',
-  transition: 'transform 0.2s',
+  transition: 'transform 0.15s',
   position: 'relative',
-  borderRadius: '3px',
+  borderRadius: '2px',
   overflow: 'hidden',
   '&:hover': {
-    transform: 'scale(1.03)',
+    transform: 'scale(1.02)',
     cursor: 'pointer',
     '& .MuiCardMedia-root': {
       filter: 'brightness(1.1)',
@@ -23,16 +23,17 @@ const GameTitle = styled(Typography)(() => ({
   bottom: 0,
   left: 0,
   right: 0,
-  padding: '30px 10px 8px',
+  padding: '20px 8px 6px',
   background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%)',
-  fontSize: '14px',
+  fontSize: '12px',
   fontWeight: 500,
+  lineHeight: 1.2,
 }));
 
 const FavoriteButton = styled(Box)(() => ({
   position: 'absolute',
-  top: 8,
-  right: 8,
+  top: 6,
+  right: 6,
   color: '#ffffff',
   opacity: 0.7,
   '&:hover': {
@@ -42,11 +43,17 @@ const FavoriteButton = styled(Box)(() => ({
 
 const SectionTitle = styled(Typography)(() => ({
   color: '#ffffff',
-  fontSize: '24px',
+  fontSize: '16px',
   fontWeight: 500,
-  marginBottom: '16px',
-  paddingBottom: '8px',
+  marginBottom: '8px',
+  paddingBottom: '4px',
+  paddingLeft: '4px',
   borderBottom: '1px solid rgba(255,255,255,0.1)',
+}));
+
+const GridContainer = styled(Grid)(() => ({
+  marginLeft: '-4px',
+  width: 'calc(100% + 8px)',
 }));
 
 // 模拟游戏数据
@@ -107,52 +114,52 @@ const Library: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2 }}>
         <SectionTitle>Favorites</SectionTitle>
-        <Grid container spacing={2}>
+        <GridContainer container spacing={1}>
           {favorites.map((game) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={game.id}>
+            <Grid item xs={12} sm={4} md={3} lg={2} xl={1.7} key={game.id}>
               <GameCard>
                 <CardMedia
                   component="img"
-                  height="150"
+                  height="120"
                   image={game.coverUrl}
                   alt={game.name}
                 />
                 <GameTitle>{game.name}</GameTitle>
                 {game.favorite && (
                   <FavoriteButton>
-                    <FavoriteIcon />
+                    <FavoriteIcon sx={{ fontSize: 18 }} />
                   </FavoriteButton>
                 )}
               </GameCard>
             </Grid>
           ))}
-        </Grid>
+        </GridContainer>
       </Box>
 
       <Box>
         <SectionTitle>All Games</SectionTitle>
-        <Grid container spacing={2}>
+        <GridContainer container spacing={1}>
           {allGames.map((game) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={game.id}>
+            <Grid item xs={12} sm={4} md={3} lg={2} xl={1.7} key={game.id}>
               <GameCard>
                 <CardMedia
                   component="img"
-                  height="150"
+                  height="120"
                   image={game.coverUrl}
                   alt={game.name}
                 />
                 <GameTitle>{game.name}</GameTitle>
                 {game.favorite && (
                   <FavoriteButton>
-                    <FavoriteIcon />
+                    <FavoriteIcon sx={{ fontSize: 18 }} />
                   </FavoriteButton>
                 )}
               </GameCard>
             </Grid>
           ))}
-        </Grid>
+        </GridContainer>
       </Box>
     </Box>
   );
