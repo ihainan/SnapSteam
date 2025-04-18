@@ -24,6 +24,7 @@ export const translations = {
     library: {
       favorites: '收藏夹',
       allGames: '所有游戏',
+      recentlyPlayed: '最近游玩',
       emptyFavorites: '收藏夹还是空的呢\n点击游戏卡片右上角的收藏图标，将喜欢的游戏添加到这里吧',
       refresh: '刷新游戏库'
     },
@@ -63,6 +64,7 @@ export const translations = {
     library: {
       favorites: 'Favorites',
       allGames: 'All Games',
+      recentlyPlayed: 'Recently Played',
       emptyFavorites: 'Your favorites list is empty\nClick the favorite icon on the top right of game cards to add games here',
       refresh: 'Refresh Library'
     },

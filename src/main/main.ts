@@ -18,12 +18,13 @@ interface SteamUser {
   avatar: string | null;
 }
 
-interface SteamGame {
+interface Game {
   id: number;
   name: string;
   coverUrl: string;
   favorite: boolean;
   userId: number;
+  lastPlayed?: number;  // 添加最后游玩时间字段
 }
 
 interface RenderProcessGoneDetails {
@@ -185,7 +186,7 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
   try {
     const steamPath = store.get('steamPath') as string;
     const userDataPath = path.join(steamPath, 'userdata', userId.toString());
-    const games: SteamGame[] = [];
+    const games: Game[] = [];
     
     // 读取用户的本地配置
     const localConfigPath = path.join(userDataPath, 'config', 'localconfig.vdf');
@@ -223,27 +224,33 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
           const appId = parseInt(appIdMatch[1]);
           const name = nameMatch[1];
           
-          // 检查游戏是否属于该用户
-          const gameOwnershipPattern = new RegExp(`"${appId}"\\s*{\\s*"LastPlayed"\\s*"\\d+"`, 'g');
-          const isOwned = gameOwnershipPattern.test(localConfigContent);
+          // 使用更精确的方式解析最后游玩时间
+          const lastPlayedPattern = new RegExp(`"${appId}"\\s*{[^}]*"LastPlayed"\\s*"(\\d+)"[^}]*}`, 'g');
+          const lastPlayedMatches = localConfigContent.match(lastPlayedPattern);
           
-          if (isOwned) {
-            // 检查游戏是否在收藏夹中
-            const favoritesPath = path.join(userDataPath, 'config', 'shortcuts.vdf');
-            let isFavorite = false;
+          if (lastPlayedMatches && lastPlayedMatches.length > 0) {
+            const lastPlayedMatch = lastPlayedMatches[0].match(/"LastPlayed"\s*"(\d+)"/);
+            const lastPlayed = lastPlayedMatch ? parseInt(lastPlayedMatch[1]) : 0;
             
-            if (fs.existsSync(favoritesPath)) {
-              const favoritesContent = fs.readFileSync(favoritesPath, 'utf-8');
-              isFavorite = favoritesContent.includes(`appid=${appId}`);
+            if (lastPlayed > 0) {
+              // 检查游戏是否在收藏夹中
+              const favoritesPath = path.join(userDataPath, 'config', 'shortcuts.vdf');
+              let isFavorite = false;
+              
+              if (fs.existsSync(favoritesPath)) {
+                const favoritesContent = fs.readFileSync(favoritesPath, 'utf-8');
+                isFavorite = favoritesContent.includes(`appid=${appId}`);
+              }
+              
+              games.push({
+                id: appId,
+                name,
+                coverUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
+                favorite: isFavorite,
+                userId,
+                lastPlayed
+              });
             }
-            
-            games.push({
-              id: appId,
-              name,
-              coverUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
-              favorite: isFavorite,
-              userId
-            });
           }
         }
       }

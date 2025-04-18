@@ -158,6 +158,7 @@ interface Game {
   coverUrl: string;
   favorite: boolean;
   userId: number;
+  lastPlayed?: number;
 }
 
 interface LibraryProps {
@@ -178,6 +179,12 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
   
   const favorites = filteredGames.filter(game => game.favorite);
   const nonFavorites = filteredGames.filter(game => !game.favorite);
+  
+  // 获取最近游玩的游戏（按 lastPlayed 时间倒序排序）
+  const recentlyPlayed = [...filteredGames]
+    .filter(game => game.lastPlayed && game.lastPlayed > 0)
+    .sort((a, b) => (b.lastPlayed || 0) - (a.lastPlayed || 0))
+    .slice(0, 3);
 
   const handleGameClick = (gameId: number, gameName: string) => {
     navigate(`/screenshots/${gameId}`);
@@ -252,6 +259,25 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
 
   return (
     <Box>
+      {recentlyPlayed.length > 0 && (
+        <Section>
+          <SectionTitle>{t.library.recentlyPlayed}</SectionTitle>
+          <GamesGrid>
+            {recentlyPlayed.map(game => (
+              <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
+                <CardMedia
+                  component="img"
+                  height="120"
+                  image={game.coverUrl}
+                  alt={game.name}
+                />
+                <GameTitle>{game.name}</GameTitle>
+              </GameCard>
+            ))}
+          </GamesGrid>
+        </Section>
+      )}
+
       <Section>
         <SectionTitle>{t.library.favorites}</SectionTitle>
         {favorites.length > 0 ? (
