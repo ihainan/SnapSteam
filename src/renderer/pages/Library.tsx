@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Card, CardMedia, Typography, styled } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import { useNavigate } from 'react-router-dom';
 
 const GameCard = styled(Card)(() => ({
   backgroundColor: 'transparent',
@@ -123,14 +124,19 @@ interface LibraryProps {
 }
 
 const Library: React.FC<LibraryProps> = ({ searchTerm }) => {
+  const navigate = useNavigate();
   const filteredGames = mockGames.filter(game => 
     game.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
   const favorites = filteredGames.filter(game => game.favorite);
 
+  const handleGameClick = (gameId: number, gameName: string) => {
+    navigate(`/screenshots/${gameId}`);
+  };
+
   const renderGameCard = (game: typeof mockGames[0]) => (
-    <GameCard key={game.id}>
+    <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
       <CardMedia
         component="img"
         height="120"
