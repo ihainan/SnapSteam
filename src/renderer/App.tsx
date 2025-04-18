@@ -23,6 +23,7 @@ import SettingsPage from './pages/Settings';
 import ScreenshotManager from './pages/ScreenshotManager';
 import { translations } from './locales';
 import { useLanguage } from './contexts/LanguageContext';
+import { ipcRenderer } from 'electron';
 
 const drawerWidth = 180;
 
@@ -121,6 +122,21 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState(mockUsers[0]);
   const [error, setError] = useState<string | null>(null);
 
+  // 从主进程加载保存的用户选择
+  useEffect(() => {
+    const loadUser = async () => {
+      const savedUserId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
+      if (savedUserId) {
+        const user = mockUsers.find(u => u.id === savedUserId);
+        if (user) {
+          setCurrentUser(user);
+        }
+      }
+    };
+    
+    loadUser();
+  }, []);
+
   console.log('App rendered, language:', language);
 
   // 检查语言和翻译是否可用
@@ -185,6 +201,8 @@ const App: React.FC = () => {
 
   const handleUserChange = (user: typeof mockUsers[0]) => {
     setCurrentUser(user);
+    // 保存用户选择到主进程
+    ipcRenderer.send('set-store-value', { key: 'currentUserId', value: user.id });
     handleUserMenuClose();
   };
 

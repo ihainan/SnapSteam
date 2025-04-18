@@ -8,6 +8,7 @@ interface AppSettings {
   themeMode: 'light' | 'dark' | 'system';
   language: 'zh' | 'en';
   steamPath: string;
+  currentUserId: number;
 }
 
 interface RenderProcessGoneDetails {
@@ -24,7 +25,8 @@ const store = new Store({
       ? '~/Library/Application Support/Steam'
       : process.platform === 'win32'
         ? 'C:\\Program Files (x86)\\Steam'
-        : '~/.local/share/Steam'
+        : '~/.local/share/Steam',
+    currentUserId: 1  // 默认选择第一个用户
   }
 });
 
