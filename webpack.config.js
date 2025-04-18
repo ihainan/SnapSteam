@@ -1,11 +1,22 @@
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = {
   mode: 'development',
-  entry: './src/renderer/index.tsx',
+  entry: [
+    'webpack/hot/dev-server',
+    'webpack-hot-middleware/client',
+    './src/renderer/index.tsx'
+  ],
   target: 'electron-renderer',
   devtool: 'source-map',
+  watch: true,
+  watchOptions: {
+    ignored: /node_modules/,
+    aggregateTimeout: 300,
+    poll: 1000
+  },
   module: {
     rules: [
       {
@@ -49,5 +60,6 @@ module.exports = {
         { from: 'src/index.html', to: 'index.html' }
       ],
     }),
+    new webpack.HotModuleReplacementPlugin()
   ],
 }; 
