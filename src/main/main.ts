@@ -11,6 +11,20 @@ interface AppSettings {
   currentUserId: number;
 }
 
+interface SteamUser {
+  id: number;
+  name: string;
+  avatar: string | null;
+}
+
+interface SteamGame {
+  id: number;
+  name: string;
+  coverUrl: string;
+  favorite: boolean;
+  userId: number;
+}
+
 interface RenderProcessGoneDetails {
   reason: string;
   exitCode: number;
@@ -70,8 +84,9 @@ ipcMain.handle('get-store-value', (_: any, key: keyof AppSettings) => {
 });
 
 // 设置配置值
-ipcMain.on('set-store-value', (_: any, { key, value }: { key: keyof AppSettings; value: AppSettings[keyof AppSettings] }) => {
+ipcMain.handle('set-store-value', (_: any, { key, value }: { key: keyof AppSettings; value: AppSettings[keyof AppSettings] }) => {
   store.set(key, value);
+  return true;
 });
 
 // 处理打开文件夹对话框的请求
@@ -116,6 +131,108 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
   } catch (error) {
     console.error('Error validating Steam path:', error);
     return false;
+  }
+});
+
+// 获取 Steam 用户列表
+ipcMain.handle('get-steam-users', async () => {
+  try {
+    const steamPath = store.get('steamPath') as string;
+    const userDataPath = path.join(steamPath, 'userdata');
+    
+    if (!fs.existsSync(userDataPath)) {
+      return [];
+    }
+
+    const users: SteamUser[] = [];
+    const userDirs = fs.readdirSync(userDataPath);
+    
+    for (const userId of userDirs) {
+      if (!/^\d+$/.test(userId)) continue;
+      
+      const userConfigPath = path.join(userDataPath, userId, 'config', 'localconfig.vdf');
+      if (!fs.existsSync(userConfigPath)) continue;
+      
+      // 读取用户配置
+      const configContent = fs.readFileSync(userConfigPath, 'utf-8');
+      const nameMatch = configContent.match(/PersonaName"\s+"([^"]+)"/);
+      const avatarMatch = configContent.match(/AvatarHash"\s+"([^"]+)"/);
+      
+      users.push({
+        id: parseInt(userId),
+        name: nameMatch ? nameMatch[1] : `用户 ${userId}`,
+        avatar: avatarMatch ? `https://avatars.steamstatic.com/${avatarMatch[1]}_full.jpg` : null
+      });
+    }
+    
+    return users;
+  } catch (error) {
+    console.error('Error getting Steam users:', error);
+    return [];
+  }
+});
+
+// 获取用户的游戏库
+ipcMain.handle('get-user-games', async (_: any, userId: number) => {
+  try {
+    const steamPath = store.get('steamPath') as string;
+    const userDataPath = path.join(steamPath, 'userdata', userId.toString());
+    const games: SteamGame[] = [];
+    
+    // 读取游戏库文件
+    const libraryFoldersPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
+    if (!fs.existsSync(libraryFoldersPath)) return [];
+    
+    const libraryContent = fs.readFileSync(libraryFoldersPath, 'utf-8');
+    const libraryPaths = libraryContent.match(/path"\s+"([^"]+)"/g)?.map((match: string) => 
+      match.match(/path"\s+"([^"]+)"/)?.[1]
+    ) || [];
+    
+    // 读取每个库文件夹中的游戏
+    for (const libraryPath of libraryPaths) {
+      if (!libraryPath) continue;
+      
+      const appManifestPath = path.join(libraryPath, 'steamapps');
+      if (!fs.existsSync(appManifestPath)) continue;
+      
+      const appManifests = fs.readdirSync(appManifestPath)
+        .filter((file: string) => file.startsWith('appmanifest_') && file.endsWith('.acf'));
+      
+      for (const manifest of appManifests) {
+        const manifestPath = path.join(appManifestPath, manifest);
+        const manifestContent = fs.readFileSync(manifestPath, 'utf-8');
+        
+        const appIdMatch = manifestContent.match(/appid"\s+"(\d+)"/);
+        const nameMatch = manifestContent.match(/name"\s+"([^"]+)"/);
+        
+        if (appIdMatch && nameMatch) {
+          const appId = parseInt(appIdMatch[1]);
+          const name = nameMatch[1];
+          
+          // 检查游戏是否在收藏夹中
+          const favoritesPath = path.join(userDataPath, 'config', 'shortcuts.vdf');
+          let isFavorite = false;
+          
+          if (fs.existsSync(favoritesPath)) {
+            const favoritesContent = fs.readFileSync(favoritesPath, 'utf-8');
+            isFavorite = favoritesContent.includes(`appid=${appId}`);
+          }
+          
+          games.push({
+            id: appId,
+            name,
+            coverUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
+            favorite: isFavorite,
+            userId
+          });
+        }
+      }
+    }
+    
+    return games;
+  } catch (error) {
+    console.error('Error getting user games:', error);
+    return [];
   }
 });
 

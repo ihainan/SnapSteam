@@ -166,10 +166,14 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
     // 立即保存到持久化存储
     const userId = games[0]?.userId; // 获取当前用户 ID
     if (userId) {
-      await ipcRenderer.send('set-store-value', { 
-        key: `userGames_${userId}`, 
-        value: updatedGames 
-      });
+      try {
+        await ipcRenderer.invoke('set-store-value', { 
+          key: `userGames_${userId}`, 
+          value: updatedGames 
+        });
+      } catch (error) {
+        console.error('Error saving favorite status:', error);
+      }
     }
   };
 

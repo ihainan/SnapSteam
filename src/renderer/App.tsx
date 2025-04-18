@@ -27,39 +27,19 @@ import { ipcRenderer } from 'electron';
 
 const drawerWidth = 180;
 
-// 模拟用户数据
-const mockUsers = [
-  { id: 1, name: "用户1", avatar: null },
-  { id: 2, name: "用户2", avatar: null },
-  { id: 3, name: "用户3", avatar: null },
-];
+interface SteamUser {
+  id: number;
+  name: string;
+  avatar: string | null;
+}
 
-// 模拟游戏数据
 interface Game {
   id: number;
   name: string;
   coverUrl: string;
   favorite: boolean;
-  userId: number;  // 添加用户 ID 字段
+  userId: number;
 }
-
-const mockGames: Record<number, Game[]> = {
-  1: [
-    { id: 1, name: "Half-Life 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/220/header.jpg", favorite: true, userId: 1 },
-    { id: 2, name: "Portal 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/620/header.jpg", favorite: false, userId: 1 },
-    { id: 3, name: "Team Fortress 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/440/header.jpg", favorite: true, userId: 1 },
-  ],
-  2: [
-    { id: 4, name: "Counter-Strike 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/730/header.jpg", favorite: true, userId: 2 },
-    { id: 5, name: "Dota 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/570/header.jpg", favorite: false, userId: 2 },
-    { id: 6, name: "Left 4 Dead 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/550/header.jpg", favorite: true, userId: 2 },
-  ],
-  3: [
-    { id: 7, name: "Grand Theft Auto V", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/271590/header.jpg", favorite: true, userId: 3 },
-    { id: 8, name: "The Witcher 3", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/292030/header.jpg", favorite: false, userId: 3 },
-    { id: 9, name: "Red Dead Redemption 2", coverUrl: "https://cdn.akamai.steamstatic.com/steam/apps/1174180/header.jpg", favorite: true, userId: 3 },
-  ],
-};
 
 // 自定义搜索框样式
 const SearchBox = styled('div')(({ theme }) => ({
@@ -143,8 +123,9 @@ class ErrorBoundary extends React.Component<
 const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [currentUser, setCurrentUser] = useState(mockUsers[0]);
-  const [games, setGames] = useState<Game[]>(mockGames[1]);
+  const [currentUser, setCurrentUser] = useState<SteamUser | null>(null);
+  const [users, setUsers] = useState<SteamUser[]>([]);
+  const [games, setGames] = useState<Game[]>([]);
   const [isSteamPathValid, setIsSteamPathValid] = useState<boolean | null>(null);
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -166,29 +147,59 @@ const App: React.FC = () => {
     checkSteamPath();
   }, [location.pathname, navigate]);
 
-  // 从主进程加载保存的用户选择和游戏收藏状态
+  // 加载 Steam 用户列表
   useEffect(() => {
-    const loadUserAndGames = async () => {
+    const loadUsers = async () => {
+      const steamUsers = await ipcRenderer.invoke('get-steam-users');
+      setUsers(steamUsers);
+      
+      // 如果有保存的用户 ID，则加载对应的用户
       const savedUserId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
       if (savedUserId) {
-        const user = mockUsers.find(u => u.id === savedUserId);
+        const user = steamUsers.find((u: SteamUser) => u.id === savedUserId);
         if (user) {
           setCurrentUser(user);
-          // 加载用户的游戏收藏状态
-          const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${user.id}`);
-          if (savedGames) {
-            setGames(savedGames);
-          } else {
-            setGames(mockGames[user.id]);
-          }
+        } else if (steamUsers.length > 0) {
+          // 如果保存的用户 ID 不存在，则选择第一个用户
+          setCurrentUser(steamUsers[0]);
+          await ipcRenderer.invoke('set-store-value', { key: 'currentUserId', value: steamUsers[0].id });
         }
-      } else {
-        setGames(mockGames[1]);
+      } else if (steamUsers.length > 0) {
+        // 如果没有保存的用户 ID，则选择第一个用户
+        setCurrentUser(steamUsers[0]);
+        await ipcRenderer.invoke('set-store-value', { key: 'currentUserId', value: steamUsers[0].id });
       }
     };
     
-    loadUserAndGames();
+    loadUsers();
   }, []);
+
+  // 加载当前用户的游戏库
+  useEffect(() => {
+    const loadGames = async () => {
+      if (currentUser) {
+        // 从 Steam 获取游戏库数据
+        const userGames = await ipcRenderer.invoke('get-user-games', currentUser.id);
+        
+        // 从持久化存储中获取收藏状态
+        const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${currentUser.id}`);
+        
+        if (savedGames && Array.isArray(savedGames)) {
+          // 合并 Steam 游戏数据和保存的收藏状态
+          const mergedGames = userGames.map((game: Game) => {
+            const savedGame = savedGames.find((g: Game) => g.id === game.id);
+            return savedGame ? { ...game, favorite: savedGame.favorite } : game;
+          });
+          
+          setGames(mergedGames);
+        } else {
+          setGames(userGames);
+        }
+      }
+    };
+    
+    loadGames();
+  }, [currentUser]);
 
   console.log('App rendered, language:', language);
 
@@ -252,26 +263,16 @@ const App: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleUserChange = async (user: typeof mockUsers[0]) => {
-    // 保存当前用户的游戏收藏状态
-    await ipcRenderer.send('set-store-value', { 
-      key: `userGames_${currentUser.id}`, 
-      value: games 
-    });
-    
+  const handleUserChange = async (user: SteamUser) => {
     setCurrentUser(user);
+    setAnchorEl(null);
     
-    // 加载新用户的游戏收藏状态
-    const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${user.id}`);
-    if (savedGames) {
-      setGames(savedGames);
-    } else {
-      setGames(mockGames[user.id]);
-    }
+    // 保存用户选择
+    await ipcRenderer.invoke('set-store-value', { key: 'currentUserId', value: user.id });
     
-    // 保存用户选择到主进程
-    ipcRenderer.send('set-store-value', { key: 'currentUserId', value: user.id });
-    handleUserMenuClose();
+    // 加载新用户的游戏库
+    const userGames = await ipcRenderer.invoke('get-user-games', user.id);
+    setGames(userGames);
   };
 
   const showTopBar = location.pathname === '/';
@@ -400,10 +401,10 @@ const App: React.FC = () => {
                     marginRight: '12px',
                   }}
                 >
-                  {currentUser.name[0]}
+                  {currentUser?.name[0]}
                 </Avatar>
                 <ListItemText
-                  primary={currentUser.name}
+                  primary={currentUser?.name}
                   sx={{
                     '& .MuiListItemText-primary': {
                       fontSize: '13px',
@@ -426,7 +427,7 @@ const App: React.FC = () => {
                   }
                 }}
               >
-                {mockUsers.map((user) => (
+                {users.map((user) => (
                   <MenuItem
                     key={user.id}
                     onClick={() => handleUserChange(user)}
