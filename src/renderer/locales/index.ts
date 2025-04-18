@@ -15,7 +15,11 @@ export const translations = {
         en: 'English'
       },
       steamPath: 'Steam 安装路径',
-      browse: '浏览'
+      browse: '浏览',
+      pathWarning: '请设置有效的 Steam 用户数据目录以使用游戏库功能',
+      pathError: '选择的路径不是有效的 Steam 用户数据目录',
+      dialogError: '打开文件夹对话框时出错',
+      pathHelper: '请选择 Steam 用户数据目录（通常包含 userdata 文件夹）'
     },
     library: {
       favorites: '收藏夹',
@@ -48,7 +52,11 @@ export const translations = {
         en: 'English'
       },
       steamPath: 'Steam Installation Path',
-      browse: 'Browse'
+      browse: 'Browse',
+      pathWarning: 'Please set a valid Steam user data directory to use the game library feature',
+      pathError: 'The selected path is not a valid Steam user data directory',
+      dialogError: 'Error opening directory dialog',
+      pathHelper: 'Please select Steam user data directory (usually contains userdata folder)'
     },
     library: {
       favorites: 'Favorites',

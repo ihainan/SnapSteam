@@ -120,12 +120,12 @@ const Settings: React.FC = () => {
           setPathError(null);
           ipcRenderer.send('set-store-value', { key: 'steamPath', value: selectedPath });
         } else {
-          setPathError('选择的路径不是有效的 Steam 用户数据目录');
+          setPathError(t.settings.pathError);
         }
       }
     } catch (error) {
       console.error('Error opening directory dialog:', error);
-      setPathError('打开文件夹对话框时出错');
+      setPathError(t.settings.dialogError);
     }
   };
 
@@ -138,7 +138,7 @@ const Settings: React.FC = () => {
       <Box sx={{ maxWidth: 800 }}>
         {!isPathValid && (
           <Alert severity="warning" sx={{ mb: 3 }}>
-            请设置有效的 Steam 用户数据目录以使用游戏库功能
+            {t.settings.pathWarning}
           </Alert>
         )}
 
@@ -184,7 +184,7 @@ const Settings: React.FC = () => {
               value={steamPath}
               onChange={handlePathChange}
               error={!!pathError}
-              helperText={pathError || "请选择 Steam 用户数据目录（通常包含 userdata 文件夹）"}
+              helperText={pathError || t.settings.pathHelper}
             />
             <StyledButton
               variant="contained"
