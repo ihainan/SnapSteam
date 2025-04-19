@@ -4,6 +4,7 @@ node_modules/
 # 构建输出
 dist/
 build/
+release/
 
 # IDE 和编辑器
 .idea/  
