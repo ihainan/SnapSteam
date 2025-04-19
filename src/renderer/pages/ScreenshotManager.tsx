@@ -12,6 +12,7 @@ import {
   Paper,
   Snackbar,
   Alert,
+  Tooltip,
 } from '@mui/material';
 import { Add as AddIcon, PhotoLibrary as PhotoLibraryIcon } from '@mui/icons-material';
 import UploadDialog from '../components/UploadDialog';
@@ -222,6 +223,17 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -291,12 +303,27 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
         <Grid container spacing={2}>
           {screenshots.map((screenshot) => (
             <Grid item xs={12} sm={6} md={4} lg={3} key={screenshot.id}>
-              <ScreenshotCard onClick={() => handleScreenshotClick(screenshot.url)}>
-                <ScreenshotImage
-                  src={screenshot.url}
-                  alt={`Screenshot ${screenshot.id}`}
-                />
-              </ScreenshotCard>
+              <Tooltip 
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      文件名: {screenshot.id}
+                    </Typography>
+                    <Typography variant="body2">
+                      创建时间: {formatDate(screenshot.timestamp)}
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="top"
+              >
+                <ScreenshotCard onClick={() => handleScreenshotClick(screenshot.url)}>
+                  <ScreenshotImage
+                    src={screenshot.url}
+                    alt={`Screenshot ${screenshot.id}`}
+                  />
+                </ScreenshotCard>
+              </Tooltip>
             </Grid>
           ))}
         </Grid>
