@@ -24,6 +24,7 @@ import ScreenshotManagerRoute from './pages/ScreenshotManagerRoute';
 import { translations } from './locales';
 import { useLanguage } from './contexts/LanguageContext';
 import { ipcRenderer } from 'electron';
+import TitleBar from './components/TitleBar';
 
 const drawerWidth = 180;
 
@@ -289,7 +290,8 @@ const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
-      <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Box sx={{ display: 'flex', height: '100vh', paddingTop: '38px' }}>
+        <TitleBar />
         <Drawer
           variant="permanent"
           anchor="left"
@@ -302,7 +304,7 @@ const App: React.FC = () => {
               backgroundColor: theme => theme.palette.background.paper,
               color: theme => theme.palette.text.primary,
               borderRight: theme => `1px solid ${theme.palette.divider}`,
-              paddingTop: '8px',
+              paddingTop: '46px',
               display: 'flex',
               flexDirection: 'column',
               boxShadow: theme => theme.palette.mode === 'dark' 
