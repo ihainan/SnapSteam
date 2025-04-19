@@ -59,9 +59,6 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
   
-  // 开发环境下打开开发者工具
-  mainWindow.webContents.openDevTools();
-
   // 监听渲染进程错误
   mainWindow.webContents.on('render-process-gone', (event: Electron.Event, details: RenderProcessGoneDetails) => {
     console.error('Renderer process gone:', details);
