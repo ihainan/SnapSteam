@@ -10,6 +10,13 @@ interface AppSettings {
   language: 'zh' | 'en';
   steamPath: string;
   currentUserId: number;
+  windowBounds: {
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+    isMaximized: boolean;
+  };
 }
 
 interface SteamUser {
@@ -42,14 +49,26 @@ const store = new Store({
       : process.platform === 'win32'
         ? 'C:\\Program Files (x86)\\Steam'
         : '~/.local/share/Steam',
-    currentUserId: 1  // 默认选择第一个用户
+    currentUserId: 1,  // 默认选择第一个用户
+    windowBounds: {
+      width: 1200,
+      height: 800,
+      x: undefined,
+      y: undefined,
+      isMaximized: false
+    }
   }
 });
 
 function createWindow() {
+  // 获取保存的窗口位置和大小
+  const windowBounds = store.get('windowBounds') as AppSettings['windowBounds'];
+  
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: windowBounds.width,
+    height: windowBounds.height,
+    x: windowBounds.x,
+    y: windowBounds.y,
     icon: process.platform === 'win32' 
       ? path.join(__dirname, '../../icons/win_icon.png')
       : path.join(__dirname, '../../icons/mac-icon.png'),
@@ -60,6 +79,11 @@ function createWindow() {
       contextIsolation: false
     },
   });
+
+  // 如果上次是最大化状态，则最大化窗口
+  if (windowBounds.isMaximized) {
+    mainWindow.maximize();
+  }
 
   // 移除菜单栏
   mainWindow.setMenuBarVisibility(false);
@@ -102,10 +126,53 @@ function createWindow() {
   // 监听窗口最大化状态变化
   mainWindow.on('maximize', () => {
     mainWindow.webContents.send('window-state-changed');
+    const bounds = mainWindow.getBounds();
+    store.set('windowBounds', {
+      ...bounds,
+      isMaximized: true
+    });
   });
 
   mainWindow.on('unmaximize', () => {
     mainWindow.webContents.send('window-state-changed');
+    const bounds = mainWindow.getBounds();
+    store.set('windowBounds', {
+      ...bounds,
+      isMaximized: false
+    });
+  });
+
+  // 保存窗口位置和大小
+  mainWindow.on('close', () => {
+    const bounds = mainWindow.getBounds();
+    store.set('windowBounds', {
+      width: bounds.width,
+      height: bounds.height,
+      x: bounds.x,
+      y: bounds.y,
+      isMaximized: mainWindow.isMaximized()
+    });
+  });
+
+  // 添加窗口移动和调整大小时的监听器
+  mainWindow.on('move', () => {
+    if (!mainWindow.isMaximized()) {
+      const bounds = mainWindow.getBounds();
+      store.set('windowBounds', {
+        ...bounds,
+        isMaximized: false
+      });
+    }
+  });
+
+  mainWindow.on('resize', () => {
+    if (!mainWindow.isMaximized()) {
+      const bounds = mainWindow.getBounds();
+      store.set('windowBounds', {
+        ...bounds,
+        isMaximized: false
+      });
+    }
   });
 }
 
