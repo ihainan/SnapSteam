@@ -50,9 +50,11 @@ function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
-    icon: path.join(__dirname, '../../logo.png'),
-    frame: false,
-    titleBarStyle: 'hidden',
+    icon: process.platform === 'win32' 
+      ? path.join(__dirname, '../../icons/win_icon.png')
+      : path.join(__dirname, '../../icons/mac-icon.png'),
+    frame: process.platform === 'darwin',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
@@ -71,6 +73,39 @@ function createWindow() {
 
   mainWindow.webContents.on('crashed', () => {
     console.error('Renderer process crashed');
+  });
+
+  // 处理窗口控制命令
+  ipcMain.on('window-control', (_: Electron.IpcMainEvent, command: string) => {
+    switch (command) {
+      case 'minimize':
+        mainWindow.minimize();
+        break;
+      case 'maximize':
+        if (mainWindow.isMaximized()) {
+          mainWindow.unmaximize();
+        } else {
+          mainWindow.maximize();
+        }
+        break;
+      case 'close':
+        mainWindow.close();
+        break;
+    }
+  });
+
+  // 处理窗口状态查询
+  ipcMain.handle('is-maximized', () => {
+    return mainWindow.isMaximized();
+  });
+
+  // 监听窗口最大化状态变化
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state-changed');
+  });
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state-changed');
   });
 }
 
