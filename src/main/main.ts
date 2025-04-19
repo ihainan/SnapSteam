@@ -351,8 +351,30 @@ function updateScreenshotsVdf(steamPath: string, userId: number, gameId: number,
     const vdfPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots.vdf');
     console.log('Updating VDF file at:', vdfPath);
     
+    // 读取现有的 VDF 文件内容
+    let existingContent = '';
+    if (fs.existsSync(vdfPath)) {
+      existingContent = fs.readFileSync(vdfPath, 'utf-8');
+    }
+    
+    // 解析现有的截图信息
+    const existingScreenshots = new Map<string, string>();
+    const screenshotRegex = /"(\d+)"\s*{([^}]*)}/g;
+    let match;
+    
+    while ((match = screenshotRegex.exec(existingContent)) !== null) {
+      const id = match[1];
+      const content = match[2];
+      existingScreenshots.set(id, content);
+    }
+    
     // 生成新的 VDF 内容
     let newVdfContent = '"screenshots"\n{\n';
+    
+    // 添加现有的截图
+    for (const [id, content] of existingScreenshots) {
+      newVdfContent += `\t"${id}"\n\t{\n${content}\n\t}\n`;
+    }
     
     // 添加新的截图
     for (const screenshot of newScreenshots) {
