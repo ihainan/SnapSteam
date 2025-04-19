@@ -17,7 +17,7 @@ import {
   CircularProgress,
   Typography
 } from '@mui/material';
-import { LibraryBooks, Settings, Search } from '@mui/icons-material';
+import { SportsEsports, Settings, Search } from '@mui/icons-material';
 import Library from './pages/Library';
 import SettingsPage from './pages/Settings';
 import ScreenshotManagerRoute from './pages/ScreenshotManagerRoute';
@@ -281,7 +281,7 @@ const App: React.FC = () => {
   const menuItems = [
     { 
       text: t.navigation.gameLibrary, 
-      icon: <LibraryBooks />, 
+      icon: <SportsEsports />, 
       path: '/',
       disabled: !isSteamPathValid // 如果 Steam 路径无效，禁用游戏库选项
     },
