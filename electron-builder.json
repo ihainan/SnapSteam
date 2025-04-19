@@ -6,11 +6,16 @@
   },
   "files": [
     "dist/**/*",
-    "package.json"
+    "package.json",
+    "icons/mac-icon.icns",
+    "icons/win_icon.png"
   ],
   "mac": {
     "target": ["dmg"],
-    "category": "public.app-category.utilities"
+    "category": "public.app-category.utilities",
+    "icon": "icons/mac-icon.icns",
+    "compression": "maximum",
+    "darkModeSupport": true
   },
   "win": {
     "target": [
@@ -18,7 +23,8 @@
         "target": "portable",
         "arch": ["x64"]
       }
-    ]
+    ],
+    "icon": "icons/win_icon.png"
   },
   "dmg": {
     "contents": [
@@ -33,5 +39,7 @@
         "path": "/Applications"
       }
     ]
-  }
+  },
+  "asar": true,
+  "compression": "maximum"
 } 

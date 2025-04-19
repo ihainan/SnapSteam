@@ -43,7 +43,8 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin({
       patterns: [
-        { from: 'logo.png', to: 'logo.png' },
+        { from: 'icons/mac-icon.png', to: 'icons/mac-icon.png' },
+        { from: 'icons/win_icon.png', to: 'icons/win_icon.png' },
         { from: 'src/index.html', to: 'index.html' }
       ],
     }),

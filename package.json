@@ -12,7 +12,9 @@
     "watch": "webpack --config webpack.config.js --watch",
     "dev": "npm run build && npm run start",
     "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:win": "npm run build && electron-builder --win"
   },
   "keywords": [],
   "author": "",
