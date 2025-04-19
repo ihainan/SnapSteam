@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const Store = require('electron-store');
-const sharp = require('sharp');
+const Jimp = require('jimp');
 
 interface AppSettings {
   themeMode: 'light' | 'dark' | 'system';
@@ -380,34 +380,34 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
       console.log('Processing file:', file);
       
       try {
-        // 使用 sharp 处理图片
-        const image = sharp(file);
-        const metadata = await image.metadata();
+        // 使用 jimp 处理图片
+        const image = await Jimp.read(file);
+        const metadata = {
+          width: image.bitmap.width,
+          height: image.bitmap.height
+        };
         
         // Steam 截图的最大尺寸和文件大小限制
         const MAX_WIDTH = 3840;
         const MAX_HEIGHT = 2160;
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
         
-        let processedImage = image;
-        
         // 如果图片尺寸超过限制，进行缩放
         if (metadata.width > MAX_WIDTH || metadata.height > MAX_HEIGHT) {
-          processedImage = processedImage.resize({
-            width: Math.min(metadata.width, MAX_WIDTH),
-            height: Math.min(metadata.height, MAX_HEIGHT),
-            fit: 'inside',
-            withoutEnlargement: true
-          });
+          image.resize(
+            Math.min(metadata.width, MAX_WIDTH),
+            Math.min(metadata.height, MAX_HEIGHT),
+            Jimp.RESIZE_BEZIER
+          );
         }
         
         // 如果文件大小超过限制，进行压缩
         let quality = 90;
-        let buffer = await processedImage.jpeg({ quality }).toBuffer();
+        let buffer = await image.quality(quality).getBufferAsync(Jimp.MIME_JPEG);
         
         while (buffer.length > MAX_FILE_SIZE && quality > 10) {
           quality -= 10;
-          buffer = await processedImage.jpeg({ quality }).toBuffer();
+          buffer = await image.quality(quality).getBufferAsync(Jimp.MIME_JPEG);
         }
         
         // 保存处理后的图片
