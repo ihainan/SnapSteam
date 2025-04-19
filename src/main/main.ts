@@ -51,11 +51,16 @@ function createWindow() {
     width: 1200,
     height: 800,
     icon: path.join(__dirname, '../../logo.png'),
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 20, y: 24 },
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false
     },
   });
+
+  // 移除菜单栏
+  mainWindow.setMenuBarVisibility(false);
 
   mainWindow.loadFile(path.join(__dirname, '../index.html'));
   
