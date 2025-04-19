@@ -488,6 +488,11 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
   }
 });
 
+// 获取应用版本
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
 app.whenReady().then(() => {
   createWindow();
 

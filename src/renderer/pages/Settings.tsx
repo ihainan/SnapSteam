@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Alert } from '@mui/material';
-import { Folder } from '@mui/icons-material';
+import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Link, Card, CardContent, IconButton, Divider } from '@mui/material';
+import { Folder, Info, GitHub, Person, Code } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
 import { ipcRenderer } from 'electron';
+import { app } from 'electron';
 
 const defaultSteamPath = process.platform === 'darwin' 
   ? '~/Library/Application Support/Steam'
@@ -65,12 +66,72 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
+const AboutCard = styled(Card)(({ theme }) => ({
+  maxWidth: 800,
+  marginTop: theme.spacing(4),
+  backgroundColor: theme.palette.background.paper,
+  border: `1px solid ${theme.palette.divider}`,
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: theme.shadows[4],
+  },
+}));
+
+const AboutContent = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(2),
+  cursor: 'pointer',
+}));
+
+const AboutIcon = styled(Info)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  marginRight: theme.spacing(2),
+  fontSize: 32,
+}));
+
+const AboutText = styled(Box)({
+  flex: 1,
+});
+
+const AboutDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    maxWidth: 500,
+    borderRadius: theme.shape.borderRadius * 2,
+    padding: theme.spacing(2),
+  },
+}));
+
+const AboutDialogTitle = styled(DialogTitle)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  paddingBottom: theme.spacing(1),
+}));
+
+const AboutDialogContent = styled(DialogContent)(({ theme }) => ({
+  padding: theme.spacing(2),
+}));
+
+const InfoItem = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(2),
+  marginBottom: theme.spacing(2),
+  '& .MuiSvgIcon-root': {
+    color: theme.palette.primary.main,
+  },
+}));
+
 const Settings: React.FC = () => {
   const { themeMode, setThemeMode } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [steamPath, setSteamPath] = useState(defaultSteamPath);
   const [pathError, setPathError] = useState<string | null>(null);
   const [isPathValid, setIsPathValid] = useState<boolean | null>(null);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
 
   // 从主进程加载保存的配置
   useEffect(() => {
@@ -78,6 +139,7 @@ const Settings: React.FC = () => {
       const savedTheme = await ipcRenderer.invoke('get-store-value', 'themeMode');
       const savedLanguage = await ipcRenderer.invoke('get-store-value', 'language');
       const savedSteamPath = await ipcRenderer.invoke('get-store-value', 'steamPath');
+      const version = await ipcRenderer.invoke('get-app-version');
       
       if (savedTheme) setThemeMode(savedTheme);
       if (savedLanguage) setLanguage(savedLanguage);
@@ -86,6 +148,7 @@ const Settings: React.FC = () => {
         const isValid = await ipcRenderer.invoke('validate-steam-path', savedSteamPath);
         setIsPathValid(isValid);
       }
+      setAppVersion(version);
     };
     
     loadSettings();
@@ -189,6 +252,80 @@ const Settings: React.FC = () => {
           </Select>
         </FormControl>
       </Box>
+
+      <AboutCard onClick={() => setAboutOpen(true)}>
+        <AboutContent>
+          <AboutIcon />
+          <AboutText>
+            <Typography variant="h6" component="div">
+              {t.settings.about}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t.settings.aboutContent.version}: {appVersion}
+            </Typography>
+          </AboutText>
+        </AboutContent>
+      </AboutCard>
+
+      <AboutDialog
+        open={aboutOpen}
+        onClose={() => setAboutOpen(false)}
+      >
+        <AboutDialogTitle>
+          <Info />
+          {t.settings.about}
+        </AboutDialogTitle>
+        <Divider />
+        <AboutDialogContent>
+          <InfoItem>
+            <Code />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">
+                {t.settings.aboutContent.version}
+              </Typography>
+              <Typography variant="body1">
+                {appVersion}
+              </Typography>
+            </Box>
+          </InfoItem>
+          <InfoItem>
+            <Person />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">
+                {t.settings.aboutContent.author}
+              </Typography>
+              <Typography variant="body1">
+                ihainan
+              </Typography>
+            </Box>
+          </InfoItem>
+          <InfoItem>
+            <GitHub />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">
+                {t.settings.aboutContent.github}
+              </Typography>
+              <Link 
+                href="https://github.com/ihainan/SnapSteam" 
+                target="_blank" 
+                rel="noopener"
+                underline="hover"
+              >
+                https://github.com/ihainan/SnapSteam
+              </Link>
+            </Box>
+          </InfoItem>
+        </AboutDialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setAboutOpen(false)}
+            variant="contained"
+            color="primary"
+          >
+            {t.settings.close}
+          </Button>
+        </DialogActions>
+      </AboutDialog>
     </Box>
   );
 };

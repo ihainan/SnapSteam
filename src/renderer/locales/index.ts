@@ -19,7 +19,14 @@ export const translations = {
       pathWarning: '请设置有效的 Steam 用户数据目录以使用游戏库功能',
       pathError: '选择的路径不是有效的 Steam 用户数据目录',
       dialogError: '打开文件夹对话框时出错',
-      pathHelper: '请选择 Steam 用户数据目录（通常包含 userdata 文件夹）'
+      pathHelper: '请选择 Steam 用户数据目录（通常包含 userdata 文件夹）',
+      about: '关于',
+      aboutContent: {
+        version: '版本',
+        author: '作者',
+        github: 'GitHub'
+      },
+      close: '关闭'
     },
     navigation: {
       gameLibrary: '游戏库',
@@ -64,7 +71,14 @@ export const translations = {
       pathWarning: 'Please set a valid Steam user data directory to use the game library feature',
       pathError: 'The selected path is not a valid Steam user data directory',
       dialogError: 'Error opening directory dialog',
-      pathHelper: 'Please select Steam user data directory (usually contains userdata folder)'
+      pathHelper: 'Please select Steam user data directory (usually contains userdata folder)',
+      about: 'About',
+      aboutContent: {
+        version: 'Version',
+        author: 'Author',
+        github: 'GitHub'
+      },
+      close: 'Close'
     },
     navigation: {
       gameLibrary: 'Game Library',
