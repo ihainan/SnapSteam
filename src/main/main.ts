@@ -433,7 +433,7 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
     console.log('Steam path:', steamPath);
     
     const screenshotsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
-    const thumbnailsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'thumbnails');
+    const thumbnailsPath = path.join(screenshotsPath, 'thumbnails');
     console.log('Screenshots path:', screenshotsPath);
     console.log('Thumbnails path:', thumbnailsPath);
     
