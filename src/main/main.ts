@@ -1,9 +1,13 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const Store = require('electron-store');
 const Jimp = require('jimp');
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const axios = require('axios');
+const { createHash } = require('crypto');
 
 interface AppSettings {
   themeMode: 'light' | 'dark' | 'system';
@@ -29,6 +33,7 @@ interface Game {
   id: number;
   name: string;
   coverUrl: string;
+  cachedCoverUrl?: string;
   favorite: boolean;
   userId: number;
   lastPlayed?: number;  // 添加最后游玩时间字段
@@ -346,10 +351,14 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
                 isFavorite = favoritesContent.includes(`appid=${appId}`);
               }
               
+              const coverUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`;
+              const cachedCoverPath = getCachedCoverPath(appId);
+              
               games.push({
                 id: appId,
                 name,
-                coverUrl: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
+                coverUrl,
+                cachedCoverUrl: fs.existsSync(cachedCoverPath) ? `file://${cachedCoverPath}` : undefined,
                 favorite: isFavorite,
                 userId,
                 lastPlayed
@@ -580,6 +589,52 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
 // 获取应用版本
 ipcMain.handle('get-app-version', () => {
   return app.getVersion();
+});
+
+// 获取游戏封面缓存目录
+function getCoverCacheDir() {
+  const cacheDir = path.join(app.getPath('userData'), 'covers');
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+  return cacheDir;
+}
+
+// 获取缓存的封面图片路径
+function getCachedCoverPath(gameId: number) {
+  return path.join(getCoverCacheDir(), `${gameId}.jpg`);
+}
+
+// 检查封面是否已缓存
+function isCoverCached(gameId: number) {
+  const cachePath = getCachedCoverPath(gameId);
+  return fs.existsSync(cachePath);
+}
+
+// 缓存封面图片
+async function cacheCover(gameId: number, imageUrl: string) {
+  try {
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const cachePath = getCachedCoverPath(gameId);
+    await fs.promises.writeFile(cachePath, response.data);
+    return `file://${cachePath}`;
+  } catch (error) {
+    console.error('Error caching cover:', error);
+    return imageUrl;
+  }
+}
+
+// 获取游戏封面（优先使用缓存）
+ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string) => {
+  try {
+    if (isCoverCached(gameId)) {
+      return `file://${getCachedCoverPath(gameId)}`;
+    }
+    return await cacheCover(gameId, coverUrl);
+  } catch (error) {
+    console.error('Error getting game cover:', error);
+    return coverUrl;
+  }
 });
 
 app.whenReady().then(() => {

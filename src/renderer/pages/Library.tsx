@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Card, CardMedia, Typography, styled, Fab } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import RefreshIcon from '@mui/icons-material/Refresh';
@@ -159,6 +159,7 @@ interface Game {
   favorite: boolean;
   userId: number;
   lastPlayed?: number;
+  cachedCoverUrl?: string;
 }
 
 interface LibraryProps {
@@ -244,12 +245,35 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
     }
   };
 
+  // 异步加载游戏封面
+  const loadGameCover = async (game: Game) => {
+    try {
+      const cachedCoverUrl = await ipcRenderer.invoke('get-game-cover', game.id, game.coverUrl);
+      setGames(prevGames => 
+        prevGames.map(g => 
+          g.id === game.id ? { ...g, cachedCoverUrl } : g
+        )
+      );
+    } catch (error) {
+      console.error('Error loading game cover:', error);
+    }
+  };
+
+  // 加载所有游戏的封面
+  useEffect(() => {
+    games.forEach(game => {
+      if (!game.cachedCoverUrl) {
+        loadGameCover(game);
+      }
+    });
+  }, [games]);
+
   const renderGameCard = (game: typeof games[0]) => (
     <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
       <CardMedia
         component="img"
         height="120"
-        image={game.coverUrl}
+        image={game.cachedCoverUrl || game.coverUrl}
         alt={game.name}
       />
       <GameTitle>{game.name}</GameTitle>
@@ -273,7 +297,7 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
                 <CardMedia
                   component="img"
                   height="120"
-                  image={game.coverUrl}
+                  image={game.cachedCoverUrl || game.coverUrl}
                   alt={game.name}
                 />
                 <GameTitle>{game.name}</GameTitle>
