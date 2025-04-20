@@ -120,10 +120,10 @@ export const translations = {
       dragAndDrop: 'Drag and drop images here',
       orClick: 'or click to select images',
       cancel: 'Cancel',
-      import: 'Import Screenshots',
+      import: 'Import Screenshots and Restart Steam',
       uploading: 'Uploading...',
       title: 'Screenshots',
-      restartSteam: 'Screenshots imported successfully! Please restart Steam client for the changes to take effect.',
+      restartSteam: 'Screenshots imported successfully, restarting Steam...',
       restartSteamFailed: 'Screenshots imported successfully, but failed to restart Steam. Please restart Steam manually.'
     }
   }
