@@ -16,7 +16,11 @@
     "icon": "icons/mac-icon.icns",
     "compression": "maximum",
     "darkModeSupport": true,
-    "artifactName": "${productName}-${version}-${arch}.${ext}"
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
+    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist"
   },
   "win": {
     "target": [
