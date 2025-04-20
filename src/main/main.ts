@@ -715,14 +715,56 @@ ipcMain.handle('restart-steam', async () => {
       const steamPath = store.get('steamPath') as string;
       const steamExePath = path.join(steamPath, 'steam.exe');
       if (fs.existsSync(steamExePath)) {
-        exec(`taskkill /F /IM steam.exe && start "" "${steamExePath}"`);
+        console.log('正在关闭 Steam...');
+        exec('taskkill /F /IM steam.exe', (error: Error | null, stdout: string, stderr: string) => {
+          if (error) {
+            console.log('Steam 可能已经关闭');
+          } else {
+            console.log('Steam 已成功关闭');
+          }
+        });
+        
+        // 等待 5 秒确保 Steam 完全关闭
+        console.log('等待 Steam 完全关闭...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // 重新打开 Steam
+        console.log('正在启动 Steam...');
+        exec(`start "" "${steamExePath}"`, (error: Error | null, stdout: string, stderr: string) => {
+          if (error) {
+            console.error('启动 Steam 失败:', error);
+          } else {
+            console.log('Steam 已成功启动');
+          }
+        });
       }
     } else {
       // Linux
       const steamPath = store.get('steamPath') as string;
       const steamBinPath = path.join(steamPath, 'steam');
       if (fs.existsSync(steamBinPath)) {
-        exec(`pkill steam && "${steamBinPath}"`);
+        console.log('正在关闭 Steam...');
+        exec('pkill steam', (error: Error | null, stdout: string, stderr: string) => {
+          if (error) {
+            console.log('Steam 可能已经关闭');
+          } else {
+            console.log('Steam 已成功关闭');
+          }
+        });
+        
+        // 等待 5 秒确保 Steam 完全关闭
+        console.log('等待 Steam 完全关闭...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // 重新打开 Steam
+        console.log('正在启动 Steam...');
+        exec(`"${steamBinPath}"`, (error: Error | null, stdout: string, stderr: string) => {
+          if (error) {
+            console.error('启动 Steam 失败:', error);
+          } else {
+            console.log('Steam 已成功启动');
+          }
+        });
       }
     }
     return true;
