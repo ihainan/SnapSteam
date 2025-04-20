@@ -293,6 +293,7 @@ ipcMain.handle('get-steam-users', async () => {
 // 获取用户的游戏库
 ipcMain.handle('get-user-games', async (_: any, userId: number) => {
   try {
+    console.log(`[Game Library] 开始加载用户 ${userId} 的游戏库`);
     const steamPath = store.get('steamPath') as string;
     const userDataPath = path.join(steamPath, 'userdata', userId.toString());
     const games: Game[] = [];
@@ -353,12 +354,15 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
               
               const coverUrl = `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`;
               const cachedCoverPath = getCachedCoverPath(appId);
+              const isCached = fs.existsSync(cachedCoverPath);
+              
+              console.log(`[Game Library] 游戏 ${appId} (${name}) 封面状态: ${isCached ? '已缓存' : '未缓存'}`);
               
               games.push({
                 id: appId,
                 name,
                 coverUrl,
-                cachedCoverUrl: fs.existsSync(cachedCoverPath) ? `file://${cachedCoverPath}` : undefined,
+                cachedCoverUrl: isCached ? `file://${cachedCoverPath}` : undefined,
                 favorite: isFavorite,
                 userId,
                 lastPlayed
@@ -369,6 +373,7 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
       }
     }
     
+    console.log(`[Game Library] 成功加载用户 ${userId} 的游戏库，共 ${games.length} 个游戏`);
     return games;
   } catch (error) {
     console.error('Error getting user games:', error);
@@ -614,12 +619,14 @@ function isCoverCached(gameId: number) {
 // 缓存封面图片
 async function cacheCover(gameId: number, imageUrl: string) {
   try {
+    console.log(`[Cover Cache] 开始下载游戏 ${gameId} 的封面`);
     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     const cachePath = getCachedCoverPath(gameId);
     await fs.promises.writeFile(cachePath, response.data);
+    console.log(`[Cover Cache] 成功缓存游戏 ${gameId} 的封面到: ${cachePath}`);
     return `file://${cachePath}`;
   } catch (error) {
-    console.error('Error caching cover:', error);
+    console.error(`[Cover Cache] 缓存游戏 ${gameId} 的封面失败:`, error);
     return imageUrl;
   }
 }
@@ -628,8 +635,10 @@ async function cacheCover(gameId: number, imageUrl: string) {
 ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string) => {
   try {
     if (isCoverCached(gameId)) {
+      console.log(`[Cover Cache] 从缓存加载游戏 ${gameId} 的封面`);
       return `file://${getCachedCoverPath(gameId)}`;
     }
+    console.log(`[Cover Cache] 从网络下载游戏 ${gameId} 的封面: ${coverUrl}`);
     return await cacheCover(gameId, coverUrl);
   } catch (error) {
     console.error('Error getting game cover:', error);
