@@ -50,10 +50,10 @@ const store = new Store({
     themeMode: 'system',
     language: 'en',
     steamPath: process.platform === 'darwin'
-      ? '~/Library/Application Support/Steam'
+      ? `${os.homedir()}/Library/Application Support/Steam`
       : process.platform === 'win32'
         ? 'C:\\Program Files (x86)\\Steam'
-        : '~/.local/share/Steam',
+        : `${os.homedir()}/.local/share/Steam`,
     currentUserId: 1,  // 默认选择第一个用户
     windowBounds: {
       width: 1200,
@@ -213,8 +213,13 @@ ipcMain.handle('open-directory-dialog', async () => {
 // 验证 Steam 用户数据目录
 ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
   try {
+    // 解析 ~ 符号为用户的 home 目录
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    console.log(`[Steam Path Validation] 开始验证路径: ${resolvedPath}`);
+    
     // 检查路径是否存在
-    if (!fs.existsSync(steamPath)) {
+    if (!fs.existsSync(resolvedPath)) {
+      console.log(`[Steam Path Validation] 路径不存在: ${resolvedPath}`);
       return false;
     }
 
@@ -222,18 +227,23 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
     
     if (platform === 'darwin') {
       // macOS 上的验证逻辑
-      // 检查是否是 Steam 数据目录
-      const isDataDir = fs.existsSync(path.join(steamPath, 'userdata')) &&
-                       fs.existsSync(path.join(steamPath, 'steamapps'));
+      const userdataExists = fs.existsSync(path.join(resolvedPath, 'userdata'));
+      const steamappsExists = fs.existsSync(path.join(resolvedPath, 'steamapps'));
+      
+      console.log(`[Steam Path Validation] userdata 目录存在: ${userdataExists}`);
+      console.log(`[Steam Path Validation] steamapps 目录存在: ${steamappsExists}`);
+      
+      const isDataDir = userdataExists && steamappsExists;
+      console.log(`[Steam Path Validation] 验证结果: ${isDataDir}`);
       
       return isDataDir;
     } else {
       // Windows 和 Linux 上的验证逻辑
       // 检查是否是 userdata 目录
-      const isUserDataDir = fs.existsSync(path.join(steamPath, 'userdata')) ||
-                          (fs.existsSync(steamPath) && 
-                           fs.readdirSync(steamPath).some((dir: string) => 
-                             fs.statSync(path.join(steamPath, dir)).isDirectory() && 
+      const isUserDataDir = fs.existsSync(path.join(resolvedPath, 'userdata')) ||
+                          (fs.existsSync(resolvedPath) && 
+                           fs.readdirSync(resolvedPath).some((dir: string) => 
+                             fs.statSync(path.join(resolvedPath, dir)).isDirectory() && 
                              /^\d+$/.test(dir)
                            ));
       
@@ -249,40 +259,65 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
 ipcMain.handle('get-steam-users', async () => {
   try {
     const steamPath = store.get('steamPath') as string;
-    const userDataPath = path.join(steamPath, 'userdata');
+    // 解析 ~ 符号为用户的 home 目录
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    console.log(`[Steam Users] 开始获取 Steam 用户列表，Steam 路径: ${resolvedPath}`);
+    
+    const userDataPath = path.join(resolvedPath, 'userdata');
+    console.log(`[Steam Users] 用户数据目录: ${userDataPath}`);
     
     if (!fs.existsSync(userDataPath)) {
+      console.log(`[Steam Users] 用户数据目录不存在: ${userDataPath}`);
       return [];
     }
 
     const users: SteamUser[] = [];
     const userDirs = fs.readdirSync(userDataPath);
+    console.log(`[Steam Users] 找到 ${userDirs.length} 个用户目录:`, userDirs);
     
     for (const userId of userDirs) {
-      if (!/^\d+$/.test(userId)) continue;
+      if (!/^\d+$/.test(userId)) {
+        console.log(`[Steam Users] 跳过非数字用户目录: ${userId}`);
+        continue;
+      }
       
       const userConfigPath = path.join(userDataPath, userId, 'config', 'localconfig.vdf');
-      if (!fs.existsSync(userConfigPath)) continue;
+      console.log(`[Steam Users] 检查用户配置文件: ${userConfigPath}`);
+      
+      if (!fs.existsSync(userConfigPath)) {
+        console.log(`[Steam Users] 用户配置文件不存在: ${userConfigPath}`);
+        continue;
+      }
       
       // 读取用户配置
       const configContent = fs.readFileSync(userConfigPath, 'utf-8');
       const nameMatch = configContent.match(/PersonaName"\s+"([^"]+)"/);
       const avatarMatch = configContent.match(/avatar"\s+"([^"]+)"/);
       
+      if (!nameMatch) {
+        console.log(`[Steam Users] 无法找到用户名称: ${userId}`);
+        continue;
+      }
+      
       // 尝试获取头像 URL
       let avatarUrl = null;
       if (avatarMatch) {
         const avatarHash = avatarMatch[1];
         avatarUrl = `https://avatars.steamstatic.com/${avatarHash}_full.jpg`;
+        console.log(`[Steam Users] 找到用户头像: ${avatarUrl}`);
       }
       
-      users.push({
+      const user = {
         id: parseInt(userId),
-        name: nameMatch ? nameMatch[1] : `用户 ${userId}`,
+        name: nameMatch[1],
         avatar: avatarUrl
-      });
+      };
+      
+      console.log(`[Steam Users] 添加用户: ${user.name} (${user.id})`);
+      users.push(user);
     }
     
+    console.log(`[Steam Users] 成功获取 ${users.length} 个用户`);
     return users;
   } catch (error) {
     console.error('Error getting Steam users:', error);
@@ -295,33 +330,66 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
   try {
     console.log(`[Game Library] 开始加载用户 ${userId} 的游戏库`);
     const steamPath = store.get('steamPath') as string;
-    const userDataPath = path.join(steamPath, 'userdata', userId.toString());
+    // 解析 ~ 符号为用户的 home 目录
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    console.log(`[Game Library] Steam 路径: ${resolvedPath}`);
+    
+    const userDataPath = path.join(resolvedPath, 'userdata', userId.toString());
+    console.log(`[Game Library] 用户数据路径: ${userDataPath}`);
+    
+    if (!fs.existsSync(userDataPath)) {
+      console.log(`[Game Library] 用户数据目录不存在: ${userDataPath}`);
+      return [];
+    }
+    
     const games: Game[] = [];
     
     // 读取用户的本地配置
     const localConfigPath = path.join(userDataPath, 'config', 'localconfig.vdf');
-    if (!fs.existsSync(localConfigPath)) return [];
+    console.log(`[Game Library] 本地配置文件路径: ${localConfigPath}`);
+    
+    if (!fs.existsSync(localConfigPath)) {
+      console.log(`[Game Library] 本地配置文件不存在: ${localConfigPath}`);
+      return [];
+    }
     
     const localConfigContent = fs.readFileSync(localConfigPath, 'utf-8');
+    console.log(`[Game Library] 成功读取本地配置文件，文件大小: ${localConfigContent.length} 字节`);
     
     // 读取游戏库文件
-    const libraryFoldersPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf');
-    if (!fs.existsSync(libraryFoldersPath)) return [];
+    const libraryFoldersPath = path.join(resolvedPath, 'steamapps', 'libraryfolders.vdf');
+    console.log(`[Game Library] 游戏库文件路径: ${libraryFoldersPath}`);
+    
+    if (!fs.existsSync(libraryFoldersPath)) {
+      console.log(`[Game Library] 游戏库文件不存在: ${libraryFoldersPath}`);
+      return [];
+    }
     
     const libraryContent = fs.readFileSync(libraryFoldersPath, 'utf-8');
+    console.log(`[Game Library] 成功读取游戏库文件，文件大小: ${libraryContent.length} 字节`);
+    
     const libraryPaths = libraryContent.match(/path"\s+"([^"]+)"/g)?.map((match: string) => 
       match.match(/path"\s+"([^"]+)"/)?.[1]
     ) || [];
+    
+    console.log(`[Game Library] 找到 ${libraryPaths.length} 个游戏库路径:`, libraryPaths);
     
     // 读取每个库文件夹中的游戏
     for (const libraryPath of libraryPaths) {
       if (!libraryPath) continue;
       
       const appManifestPath = path.join(libraryPath, 'steamapps');
-      if (!fs.existsSync(appManifestPath)) continue;
+      console.log(`[Game Library] 检查游戏库路径: ${appManifestPath}`);
+      
+      if (!fs.existsSync(appManifestPath)) {
+        console.log(`[Game Library] 游戏库路径不存在: ${appManifestPath}`);
+        continue;
+      }
       
       const appManifests = fs.readdirSync(appManifestPath)
         .filter((file: string) => file.startsWith('appmanifest_') && file.endsWith('.acf'));
+      
+      console.log(`[Game Library] 找到 ${appManifests.length} 个游戏清单文件`);
       
       for (const manifest of appManifests) {
         const manifestPath = path.join(appManifestPath, manifest);
@@ -333,6 +401,8 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
         if (appIdMatch && nameMatch) {
           const appId = parseInt(appIdMatch[1]);
           const name = nameMatch[1];
+          
+          console.log(`[Game Library] 处理游戏: ${name} (${appId})`);
           
           // 使用更精确的方式解析最后游玩时间
           const lastPlayedPattern = new RegExp(`"${appId}"\\s*{[^}]*"LastPlayed"\\s*"(\\d+)"[^}]*}`, 'g');
@@ -385,7 +455,9 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
 ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: number) => {
   try {
     const steamPath = store.get('steamPath') as string;
-    const screenshotsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
+    // 解析 ~ 符号为用户的 home 目录
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
     
     console.log('Looking for screenshots in:', screenshotsPath);
     
@@ -430,9 +502,11 @@ ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: nu
 ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: { gameId: number, userId: number, files: string[] }) => {
   try {
     const steamPath = store.get('steamPath') as string;
-    console.log('Steam path:', steamPath);
+    // 解析 ~ 符号为用户的 home 目录
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    console.log('Steam path:', resolvedPath);
     
-    const screenshotsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
+    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
     const thumbnailsPath = path.join(screenshotsPath, 'thumbnails');
     console.log('Screenshots path:', screenshotsPath);
     console.log('Thumbnails path:', thumbnailsPath);

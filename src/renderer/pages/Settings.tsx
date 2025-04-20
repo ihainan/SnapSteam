@@ -8,12 +8,13 @@ import { ipcRenderer } from 'electron';
 import { app } from 'electron';
 import { useNavigate } from 'react-router-dom';
 import { CircularProgress } from '@mui/material';
+import os from 'os';
 
 const defaultSteamPath = process.platform === 'darwin' 
-  ? '~/Library/Application Support/Steam'
+  ? `${os.homedir()}/Library/Application Support/Steam`
   : process.platform === 'win32'
   ? 'C:\\Program Files (x86)\\Steam\\userdata'
-  : '~/.local/share/Steam/userdata';
+  : `${os.homedir()}/.local/share/Steam/userdata`;
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
