@@ -162,7 +162,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({ open, onClose, onUpload }) 
       </DialogTitle>
       <DialogContent sx={{ padding: '0' }}>
         <input
-          accept="image/*"
+          accept="image/jpeg,image/png,image/bmp,image/gif"
           style={{ display: 'none' }}
           id="upload-images"
           multiple
