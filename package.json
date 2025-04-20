@@ -13,10 +13,10 @@
     "dev": "npm run build && npm run start",
     "pack": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
-    "package:mac": "npm run build && electron-builder --mac",
-    "package:mac:intel": "npm run build && electron-builder --mac --x64",
-    "package:mac:universal": "npm run build && electron-builder --mac --universal",
-    "package:win": "npm run build && electron-builder --win"
+    "package:mac": "npm run build && electron-builder --mac --publish=never",
+    "package:mac:intel": "npm run build && electron-builder --mac --x64 --publish=never",
+    "package:mac:universal": "npm run build && electron-builder --mac --universal --publish=never",
+    "package:win": "npm run build && electron-builder --win --publish=never"
   },
   "keywords": [],
   "author": "",
