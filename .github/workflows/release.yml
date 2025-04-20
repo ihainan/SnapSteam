@@ -38,7 +38,7 @@ jobs:
 
       - name: Verify artifacts
         run: |
-          ls -la releases/
+          ls -la release/
           # 添加文件大小检查等验证步骤
 
       - name: Upload mac artifacts
@@ -46,7 +46,7 @@ jobs:
         with:
           name: mac-artifacts
           path: |
-            releases/*.dmg
+            release/*.dmg
 
   build-win:
     runs-on: windows-latest
@@ -75,7 +75,7 @@ jobs:
         with:
           name: win-artifacts
           path: |
-            releases/*.exe
+            release/*.exe
 
   release:
     needs: [build-mac, build-win]
