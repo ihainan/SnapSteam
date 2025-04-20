@@ -26,7 +26,18 @@ export const translations = {
         author: '作者',
         github: 'GitHub'
       },
-      close: '关闭'
+      close: '关闭',
+      cache: {
+        title: '缓存管理',
+        clear: '清理游戏封面缓存',
+        clearing: '清理中...',
+        confirm: {
+          title: '清理缓存',
+          message: '确定要清理所有游戏封面缓存吗？清理后需要重新下载封面图片。',
+          cancel: '取消',
+          confirm: '确定'
+        }
+      }
     },
     navigation: {
       gameLibrary: '游戏库',
@@ -78,7 +89,18 @@ export const translations = {
         author: 'Author',
         github: 'GitHub'
       },
-      close: 'Close'
+      close: 'Close',
+      cache: {
+        title: 'Cache Management',
+        clear: 'Clear Game Cover Cache',
+        clearing: 'Clearing...',
+        confirm: {
+          title: 'Clear Cache',
+          message: 'Are you sure you want to clear all game cover cache? Covers will need to be downloaded again.',
+          cancel: 'Cancel',
+          confirm: 'Confirm'
+        }
+      }
     },
     navigation: {
       gameLibrary: 'Game Library',

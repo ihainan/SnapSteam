@@ -646,6 +646,38 @@ ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string
   }
 });
 
+// 清理封面缓存
+ipcMain.handle('clear-cover-cache', async () => {
+  try {
+    const cacheDir = getCoverCacheDir();
+    console.log(`[Cache] 开始清理缓存目录: ${cacheDir}`);
+    
+    if (fs.existsSync(cacheDir)) {
+      const files = fs.readdirSync(cacheDir);
+      console.log(`[Cache] 找到 ${files.length} 个缓存文件`);
+      
+      for (const file of files) {
+        const filePath = path.join(cacheDir, file);
+        try {
+          fs.unlinkSync(filePath);
+          console.log(`[Cache] 已删除缓存文件: ${file}`);
+        } catch (error) {
+          console.error(`[Cache] 删除缓存文件失败 ${file}:`, error);
+        }
+      }
+      
+      console.log(`[Cache] 缓存清理完成`);
+      return true;
+    }
+    
+    console.log(`[Cache] 缓存目录不存在`);
+    return false;
+  } catch (error) {
+    console.error('[Cache] 清理缓存失败:', error);
+    return false;
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
 

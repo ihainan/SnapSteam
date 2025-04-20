@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Link, Card, CardContent, IconButton, Divider } from '@mui/material';
-import { Folder, Info, GitHub, Person, Code } from '@mui/icons-material';
+import { Folder, Info, GitHub, Person, Code, Delete } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
 import { ipcRenderer } from 'electron';
 import { app } from 'electron';
+import { useNavigate } from 'react-router-dom';
+import { CircularProgress } from '@mui/material';
 
 const defaultSteamPath = process.platform === 'darwin' 
   ? '~/Library/Application Support/Steam'
@@ -127,11 +129,16 @@ const InfoItem = styled(Box)(({ theme }) => ({
 const Settings: React.FC = () => {
   const { themeMode, setThemeMode } = useTheme();
   const { language, setLanguage } = useLanguage();
-  const [steamPath, setSteamPath] = useState(defaultSteamPath);
+  const [steamPath, setSteamPath] = useState<string>('');
   const [pathError, setPathError] = useState<string | null>(null);
   const [isPathValid, setIsPathValid] = useState<boolean | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [appVersion, setAppVersion] = useState('');
+  const [showPathError, setShowPathError] = useState<boolean>(false);
+  const [showPathWarning, setShowPathWarning] = useState<boolean>(false);
+  const [isClearingCache, setIsClearingCache] = useState<boolean>(false);
+  const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
+  const navigate = useNavigate();
 
   // 从主进程加载保存的配置
   useEffect(() => {
@@ -192,42 +199,36 @@ const Settings: React.FC = () => {
     }
   };
 
+  const handleClearCache = async () => {
+    try {
+      setIsClearingCache(true);
+      const success = await ipcRenderer.invoke('clear-cover-cache');
+      if (success) {
+        // 重新加载页面
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+    } finally {
+      setIsClearingCache(false);
+      setShowClearCacheDialog(false);
+    }
+  };
+
   const t = translations[language];
 
   return (
-    <Box>
-      <SectionTitle>{t.settings.title}</SectionTitle>
-      <Box sx={{ mb: 4 }}>
-        <SubTitle>{t.settings.steamPath}</SubTitle>
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-          <StyledTextField
-            fullWidth
-            value={steamPath}
-            onChange={handlePathChange}
-            error={!!pathError}
-            helperText={pathError || t.settings.pathHelper}
-          />
-          <StyledButton
-            variant="contained"
-            startIcon={<Folder />}
-            onClick={handleBrowse}
-          >
-            {t.settings.browse}
-          </StyledButton>
-        </Box>
-        {!isPathValid && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            {t.settings.pathWarning}
-          </Alert>
-        )}
-      </Box>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" sx={{ mb: 3 }}>
+        {t.settings.title}
+      </Typography>
 
-      <Box sx={{ maxWidth: 800 }}>
-        <SubTitle>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
           {t.settings.appearance}
-        </SubTitle>
+        </Typography>
         
-        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+        <FormControl fullWidth sx={{ mb: 2 }}>
           <InputLabel>{t.settings.theme}</InputLabel>
           <Select
             value={themeMode}
@@ -240,7 +241,7 @@ const Settings: React.FC = () => {
           </Select>
         </FormControl>
 
-        <FormControl fullWidth size="small" sx={{ mb: 3 }}>
+        <FormControl fullWidth>
           <InputLabel>{t.settings.language}</InputLabel>
           <Select
             value={language}
@@ -251,6 +252,51 @@ const Settings: React.FC = () => {
             <MenuItem value="en">{t.settings.languageOptions.en}</MenuItem>
           </Select>
         </FormControl>
+      </Box>
+
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          {t.settings.steamPath}
+        </Typography>
+        
+        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <TextField
+            fullWidth
+            value={steamPath}
+            onChange={handlePathChange}
+            error={showPathError}
+            helperText={showPathError ? t.settings.pathError : t.settings.pathHelper}
+          />
+          <Button
+            variant="contained"
+            onClick={handleBrowse}
+            sx={{ minWidth: '100px' }}
+          >
+            {t.settings.browse}
+          </Button>
+        </Box>
+        
+        {showPathWarning && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {t.settings.pathWarning}
+          </Alert>
+        )}
+      </Box>
+
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          {t.settings.cache.title}
+        </Typography>
+        
+        <Button
+          variant="outlined"
+          color="error"
+          onClick={() => setShowClearCacheDialog(true)}
+          disabled={isClearingCache}
+          startIcon={isClearingCache ? <CircularProgress size={20} /> : <Delete />}
+        >
+          {isClearingCache ? t.settings.cache.clearing : t.settings.cache.clear}
+        </Button>
       </Box>
 
       <AboutCard onClick={() => setAboutOpen(true)}>
@@ -326,6 +372,35 @@ const Settings: React.FC = () => {
           </Button>
         </DialogActions>
       </AboutDialog>
+
+      <Dialog
+        open={showClearCacheDialog}
+        onClose={() => !isClearingCache && setShowClearCacheDialog(false)}
+      >
+        <DialogTitle>
+          {t.settings.cache.confirm.title}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t.settings.cache.confirm.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowClearCacheDialog(false)}
+            disabled={isClearingCache}
+          >
+            {t.settings.cache.confirm.cancel}
+          </Button>
+          <Button 
+            onClick={handleClearCache}
+            color="error"
+            disabled={isClearingCache}
+          >
+            {t.settings.cache.confirm.confirm}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
