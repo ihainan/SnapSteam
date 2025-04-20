@@ -37,7 +37,7 @@ jobs:
           # 添加文件大小检查等验证步骤
 
       - name: Upload mac artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: mac-artifacts
           path: |
@@ -64,7 +64,7 @@ jobs:
         run: npm run package:win
 
       - name: Upload win artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: win-artifacts
           path: |
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v2
         with:
           path: artifacts
 
