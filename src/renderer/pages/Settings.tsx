@@ -259,18 +259,23 @@ const Settings: React.FC = () => {
           {t.settings.steamPath}
         </Typography>
         
-        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 2 }}>
           <TextField
             fullWidth
             value={steamPath}
             onChange={handlePathChange}
             error={showPathError}
             helperText={showPathError ? t.settings.pathError : t.settings.pathHelper}
+            sx={{ flex: 1 }}
           />
           <Button
             variant="contained"
             onClick={handleBrowse}
-            sx={{ minWidth: '100px' }}
+            sx={{ 
+              minWidth: '100px',
+              height: '40px',
+              mt: '1px'
+            }}
           >
             {t.settings.browse}
           </Button>
