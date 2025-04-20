@@ -16,18 +16,25 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
       - name: Build app
         run: npm run build
+        continue-on-error: false
 
       - name: Package for mac (arm64)
         run: npm run package:mac
 
       - name: Package for mac (intel)
         run: npm run package:mac:intel
+
+      - name: Verify artifacts
+        run: |
+          ls -la releases/
+          # 添加文件大小检查等验证步骤
 
       - name: Upload mac artifacts
         uses: actions/upload-artifact@v3
