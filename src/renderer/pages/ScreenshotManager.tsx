@@ -137,6 +137,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRestartAlert, setShowRestartAlert] = useState(false);
+  const [restartMessage, setRestartMessage] = useState<string | null>(null);
 
   const t = translations[language];
 
@@ -213,8 +214,24 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       // 更新截图列表
       setScreenshots([...importedScreenshots, ...screenshots]);
       setError(null);
-      // 显示重启提示
-      setShowRestartAlert(true);
+      
+      if (importedScreenshots.length > 0) {
+        setShowRestartAlert(true);
+        setRestartMessage(t.screenshotManager.restartSteam);
+        
+        // 等待 1 秒后再重启 Steam
+        setTimeout(async () => {
+          try {
+            const success = await ipcRenderer.invoke('restart-steam');
+            if (!success) {
+              setRestartMessage(t.screenshotManager.restartSteamFailed);
+            }
+          } catch (error) {
+            console.error('Error restarting Steam:', error);
+            setRestartMessage(t.screenshotManager.restartSteamFailed);
+          }
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error importing screenshots:', error);
       setError('导入截图时出错');
@@ -350,7 +367,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
               : '0 4px 6px rgba(0,0,0,0.1)',
           }}
         >
-          {t.screenshotManager.restartSteam}
+          {restartMessage}
         </Alert>
       </Snackbar>
 

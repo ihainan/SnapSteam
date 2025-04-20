@@ -56,10 +56,11 @@ export const translations = {
       dragAndDrop: '拖拽图片到这里',
       orClick: '或者点击选择图片',
       cancel: '取消',
-      import: '导入截图',
+      import: '导入截图并重启 Steam',
       uploading: '上传中...',
       title: '截图',
-      restartSteam: '截图已成功导入！请重启 Steam 客户端以使更改生效。'
+      restartSteam: '截图已成功导入，正在重启 Steam...',
+      restartSteamFailed: '截图已成功导入，但重启 Steam 失败，请手动重启 Steam'
     }
   },
   en: {
@@ -122,7 +123,8 @@ export const translations = {
       import: 'Import Screenshots',
       uploading: 'Uploading...',
       title: 'Screenshots',
-      restartSteam: 'Screenshots imported successfully! Please restart Steam client for the changes to take effect.'
+      restartSteam: 'Screenshots imported successfully! Please restart Steam client for the changes to take effect.',
+      restartSteamFailed: 'Screenshots imported successfully, but failed to restart Steam. Please restart Steam manually.'
     }
   }
 }; 

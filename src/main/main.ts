@@ -678,6 +678,60 @@ ipcMain.handle('clear-cover-cache', async () => {
   }
 });
 
+// 重启 Steam 客户端
+ipcMain.handle('restart-steam', async () => {
+  try {
+    const platform = process.platform;
+    console.log('正在尝试重启 Steam，当前系统:', platform);
+    
+    if (platform === 'darwin') {
+      // macOS
+      console.log('正在关闭 Steam...');
+      exec('osascript -e \'quit app "Steam"\'', (error: Error | null, stdout: string, stderr: string) => {
+        if (error) {
+          console.log('Steam 可能已经关闭');
+        } else {
+          console.log('Steam 已成功关闭');
+        }
+      });
+      
+      // 等待 5 秒确保 Steam 完全关闭
+      console.log('等待 Steam 完全关闭...');
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      
+      // 重新打开 Steam
+      console.log('正在启动 Steam...');
+      exec('open -a Steam', (error: Error | null, stdout: string, stderr: string) => {
+        if (error) {
+          console.error('启动 Steam 失败:', error);
+        } else {
+          console.log('Steam 已成功启动');
+        }
+      });
+      
+      return true;
+    } else if (platform === 'win32') {
+      // Windows
+      const steamPath = store.get('steamPath') as string;
+      const steamExePath = path.join(steamPath, 'steam.exe');
+      if (fs.existsSync(steamExePath)) {
+        exec(`taskkill /F /IM steam.exe && start "" "${steamExePath}"`);
+      }
+    } else {
+      // Linux
+      const steamPath = store.get('steamPath') as string;
+      const steamBinPath = path.join(steamPath, 'steam');
+      if (fs.existsSync(steamBinPath)) {
+        exec(`pkill steam && "${steamBinPath}"`);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error('重启 Steam 时发生错误:', error);
+    return false;
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
 
