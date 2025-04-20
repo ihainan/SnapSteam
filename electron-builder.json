@@ -25,7 +25,8 @@
         "arch": ["x64"]
       }
     ],
-    "icon": "icons/win_icon.png"
+    "icon": "icons/win_icon.png",
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
   },
   "dmg": {
     "contents": [
