@@ -1,0 +1,81 @@
+name: Build and Release SnapSteam
+
+on:
+  push:
+    tags:
+      - 'v*'  # 例如 v1.0.0 才会触发
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package for mac (arm64)
+        run: npm run package:mac
+
+      - name: Package for mac (intel)
+        run: npm run package:mac:intel
+
+      - name: Upload mac artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: mac-artifacts
+          path: |
+            releases/*.dmg
+
+  build-win:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package for Windows
+        run: npm run package:win
+
+      - name: Upload win artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: win-artifacts
+          path: |
+            releases/*.exe
+
+  release:
+    needs: [build-mac, build-win]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: artifacts/**/*.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
