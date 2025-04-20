@@ -28,9 +28,13 @@ jobs:
 
       - name: Package for mac (arm64)
         run: npm run package:mac
+        env:
+            GH_TOKEN: ${{ secrets.GH_TOKEN }}  
 
       - name: Package for mac (intel)
         run: npm run package:mac:intel
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}             
 
       - name: Verify artifacts
         run: |
@@ -63,6 +67,8 @@ jobs:
 
       - name: Package for Windows
         run: npm run package:win
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}             
 
       - name: Upload win artifact
         uses: actions/upload-artifact@v4
@@ -85,5 +91,5 @@ jobs:
         with:
           files: artifacts/**/*.*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
