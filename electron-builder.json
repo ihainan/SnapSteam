@@ -15,7 +15,8 @@
     "category": "public.app-category.utilities",
     "icon": "icons/mac-icon.icns",
     "compression": "maximum",
-    "darkModeSupport": true
+    "darkModeSupport": true,
+    "artifactName": "${productName}-${version}-${arch}.${ext}"
   },
   "win": {
     "target": [
