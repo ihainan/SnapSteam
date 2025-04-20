@@ -24,11 +24,12 @@
     "@emotion/styled": "^11.11.0",
     "@mui/icons-material": "^5.15.14",
     "@mui/material": "^5.15.14",
+    "axios": "^1.8.4",
     "electron-store": "^8.1.0",
+    "jimp": "^0.22.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3",
-    "jimp": "^0.22.10"
+    "react-router-dom": "^6.22.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
