@@ -142,7 +142,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   const [error, setError] = useState<string | null>(null);
   const [showRestartAlert, setShowRestartAlert] = useState(false);
   const [restartMessage, setRestartMessage] = useState<string | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showRestartOptions, setShowRestartOptions] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const t = translations[language];
@@ -187,11 +187,6 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
     if (files.length === 0) return;
 
     setPendingFiles(files);
-    setShowConfirmDialog(true);
-  };
-
-  const handleConfirmUpload = async () => {
-    setShowConfirmDialog(false);
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -199,7 +194,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       const userId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
       
       // 将文件保存到临时目录
-      const tempFiles = await Promise.all(pendingFiles.map(async (file) => {
+      const tempFiles = await Promise.all(files.map(async (file) => {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const tempPath = path.join(os.tmpdir(), file.name);
@@ -228,21 +223,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       setError(null);
       
       if (importedScreenshots.length > 0) {
-        setShowRestartAlert(true);
-        setRestartMessage(t.screenshotManager.restartSteam);
-        
-        // 等待 1 秒后再重启 Steam
-        setTimeout(async () => {
-          try {
-            const success = await ipcRenderer.invoke('restart-steam');
-            if (!success) {
-              setRestartMessage(t.screenshotManager.restartSteamFailed);
-            }
-          } catch (error) {
-            console.error('Error restarting Steam:', error);
-            setRestartMessage(t.screenshotManager.restartSteamFailed);
-          }
-        }, 1000);
+        setShowRestartOptions(true);
       }
     } catch (error) {
       console.error('Error importing screenshots:', error);
@@ -253,8 +234,33 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
     }
   };
 
+  const handleRestartNow = async () => {
+    setShowRestartOptions(false);
+    setShowRestartAlert(true);
+    setRestartMessage(t.screenshotManager.restartSteam);
+    
+    // 等待 1 秒后再重启 Steam
+    setTimeout(async () => {
+      try {
+        const success = await ipcRenderer.invoke('restart-steam');
+        if (!success) {
+          setRestartMessage(t.screenshotManager.restartSteamFailed);
+        }
+      } catch (error) {
+        console.error('Error restarting Steam:', error);
+        setRestartMessage(t.screenshotManager.restartSteamFailed);
+      }
+    }, 1000);
+  };
+
+  const handleRestartLater = () => {
+    setShowRestartOptions(false);
+    setShowRestartAlert(true);
+    setRestartMessage(t.screenshotManager.importSuccess);
+  };
+
   const handleCancelUpload = () => {
-    setShowConfirmDialog(false);
+    setIsUploading(false);
     setPendingFiles([]);
   };
 
@@ -365,62 +371,21 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       )}
 
       <Dialog
-        open={showConfirmDialog}
-        onClose={handleCancelUpload}
-        PaperProps={{
-          sx: {
-            borderRadius: '12px',
-            minWidth: '400px',
-            backgroundColor: theme => theme.palette.mode === 'dark' 
-              ? 'rgba(255, 255, 255, 0.05)' 
-              : '#ffffff',
-          }
-        }}
+        open={showRestartOptions}
+        onClose={() => setShowRestartOptions(false)}
+        maxWidth="sm"
+        fullWidth
       >
-        <DialogTitle sx={{ 
-          fontSize: '20px',
-          fontWeight: 600,
-          color: theme => theme.palette.text.primary,
-          borderBottom: theme => `1px solid ${theme.palette.divider}`,
-          pb: 2
-        }}>
-          {t.screenshotManager.confirmTitle}
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3, pb: 2 }}>
-          <Typography variant="body1" color="text.secondary">
-            {t.screenshotManager.confirmMessage}
-          </Typography>
+        <DialogTitle>{t.screenshotManager.title}</DialogTitle>
+        <DialogContent>
+          <Typography>{t.screenshotManager.importSuccess}</Typography>
         </DialogContent>
-        <DialogActions sx={{ 
-          px: 3, 
-          py: 2,
-          borderTop: theme => `1px solid ${theme.palette.divider}`
-        }}>
-          <Button 
-            onClick={handleCancelUpload}
-            sx={{
-              color: theme => theme.palette.text.secondary,
-              '&:hover': {
-                backgroundColor: theme => theme.palette.mode === 'dark' 
-                  ? 'rgba(255, 255, 255, 0.05)' 
-                  : 'rgba(0, 0, 0, 0.05)'
-              }
-            }}
-          >
-            {t.screenshotManager.cancel}
+        <DialogActions>
+          <Button onClick={handleRestartLater}>
+            {t.screenshotManager.restartLater}
           </Button>
-          <Button 
-            onClick={handleConfirmUpload}
-            variant="contained"
-            sx={{
-              backgroundColor: theme => theme.palette.primary.main,
-              color: '#ffffff',
-              '&:hover': {
-                backgroundColor: theme => theme.palette.primary.dark
-              }
-            }}
-          >
-            {t.screenshotManager.confirm}
+          <Button onClick={handleRestartNow} variant="contained" color="primary">
+            {t.screenshotManager.restartNow}
           </Button>
         </DialogActions>
       </Dialog>

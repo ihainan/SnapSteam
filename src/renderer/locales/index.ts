@@ -56,14 +56,17 @@ export const translations = {
       dragAndDrop: '拖拽图片到这里',
       orClick: '或者点击选择图片',
       cancel: '取消',
-      import: '导入截图并重启 Steam',
+      import: '导入截图',
       uploading: '上传中...',
       title: '截图',
       restartSteam: '截图已成功导入，正在重启 Steam...',
       restartSteamFailed: '截图已成功导入，但重启 Steam 失败，请手动重启 Steam',
       confirmTitle: '确认重启 Steam',
       confirmMessage: '请确保没有游戏或应用正在运行。重启 Steam 将关闭所有正在运行的游戏和应用程序。',
-      confirm: '确定'
+      confirm: '确定',
+      restartNow: '现在重启 Steam',
+      restartLater: '稍后自行重启',
+      importSuccess: '截图已成功导入！需要重启 Steam 客户端才能使截图在 Steam 中显示。\n\n请注意：重启 Steam 将关闭所有正在运行的游戏和应用程序，请确保已保存所有进度。'
     }
   },
   en: {
@@ -123,14 +126,17 @@ export const translations = {
       dragAndDrop: 'Drag and drop images here',
       orClick: 'or click to select images',
       cancel: 'Cancel',
-      import: 'Import Screenshots and Restart Steam',
+      import: 'Import Screenshots',
       uploading: 'Uploading...',
       title: 'Screenshots',
       restartSteam: 'Screenshots imported successfully, restarting Steam...',
       restartSteamFailed: 'Screenshots imported successfully, but failed to restart Steam. Please restart Steam manually.',
       confirmTitle: 'Confirm Restart Steam',
       confirmMessage: 'Please make sure no games or applications are running. Restarting Steam will close all running games and applications.',
-      confirm: 'Confirm'
+      confirm: 'Confirm',
+      restartNow: 'Restart Steam Now',
+      restartLater: 'Restart Later',
+      importSuccess: 'Screenshots imported successfully! You need to restart Steam client to see the screenshots in Steam.\n\nNote: Restarting Steam will close all running games and applications. Please make sure you have saved all progress.'
     }
   }
 }; 
