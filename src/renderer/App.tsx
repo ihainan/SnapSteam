@@ -267,6 +267,7 @@ const App: React.FC = () => {
   const handleUserChange = async (user: SteamUser) => {
     setCurrentUser(user);
     setAnchorEl(null);
+    setSearchTerm(''); // 清空搜索栏
     
     // 保存用户选择
     await ipcRenderer.invoke('set-store-value', { key: 'currentUserId', value: user.id });
