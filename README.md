@@ -1,14 +1,26 @@
 # SnapSteam
 
+<img src="icons/mac-icon.png" width="130"/>
+
+
 A tool for importing external images into Steam's screenshot library.
 
 ## Screenshots
 
-![game_library](https://imgur.ihainan.me/q79OPRX.png)
+![game_library](https://i.imgur.com/is0DRp7.png)
 
-![screenshots](https://imgur.ihainan.me/5pxN8Nd.png)
+![screenshots](https://i.imgur.com/rhpRBYY.png)
 
-![import_image](https://i.imgur.com/5ohBzjD.png)
+## Videos
+
+Windows: https://youtu.be/0yM4cpLRiSg
+
+macOS: https://youtu.be/lASYlvCcAVY
+
+## Installation
+
+Download from the [Releases page](https://github.com/ihainan/SnapSteam/releases). Currently supports Windows and macOS (both Intel and Apple Silicon). Linux is not supported yet but you can build it from source.
+
 
 ## Features
 
@@ -34,7 +46,7 @@ npm run dev
 
 ### Building for macOS
 ```bash
-npm run package:mac
+npm run package:mac # or npm run package:mac:intel for the Intel chip.
 ```
 
 ### Building for Windows
