@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'  # 例如 v1.0.0 才会触发
+  workflow_dispatch:
 
 jobs:
   build-mac:
