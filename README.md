@@ -30,6 +30,20 @@ npm install
 npm run dev
 ```
 
+## Building the Application
+
+### Building for macOS
+```bash
+npm run package:mac
+```
+
+### Building for Windows
+```bash
+npm run package:win
+```
+
+The built application will be generated in the `dist` directory.
+
 ## License
 
 ISC
