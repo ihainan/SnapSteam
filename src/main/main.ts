@@ -433,31 +433,57 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
     console.log('Steam path:', steamPath);
     
     const screenshotsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
+    const thumbnailsPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'thumbnails');
     console.log('Screenshots path:', screenshotsPath);
+    console.log('Thumbnails path:', thumbnailsPath);
     
-    // 确保截图目录存在
+    // 确保截图目录和缩略图目录存在
     if (!fs.existsSync(screenshotsPath)) {
       console.log('Creating screenshots directory');
       fs.mkdirSync(screenshotsPath, { recursive: true });
     }
+    if (!fs.existsSync(thumbnailsPath)) {
+      console.log('Creating thumbnails directory');
+      fs.mkdirSync(thumbnailsPath, { recursive: true });
+    }
 
     const importedFiles = [];
+    // 使用本地时间生成时间戳
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
     
-    for (const file of files) {
-      const fileName = path.basename(file);
-      const timestamp = new Date().getTime();
-      const newFileName = `${timestamp}_${fileName.replace('.jpeg', '.jpg')}`;
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const newFileName = `${timestamp}_${i + 1}.jpg`;
       const targetPath = path.join(screenshotsPath, newFileName);
+      const thumbnailPath = path.join(thumbnailsPath, newFileName);
       
       console.log('Processing file:', file);
       
       try {
-        // 直接复制文件
-        fs.copyFileSync(file, targetPath);
+        // 使用 jimp 处理图片
+        const image = await Jimp.read(file);
+        
+        // 保存原图
+        await image.writeAsync(targetPath);
+        
+        // 生成缩略图（Steam 缩略图通常是 200x112）
+        const thumbnail = image.clone();
+        await thumbnail
+          .resize(200, 112, Jimp.RESIZE_BEZIER)
+          .quality(90)
+          .writeAsync(thumbnailPath);
+        
         importedFiles.push({
           id: newFileName,
           url: `file://${targetPath}`,
-          timestamp: new Date().toISOString()
+          timestamp: now.toISOString()
         });
       } catch (error) {
         console.error(`Error processing file ${file}:`, error);
