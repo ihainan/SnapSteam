@@ -13,6 +13,10 @@ import {
   Snackbar,
   Alert,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { Add as AddIcon, PhotoLibrary as PhotoLibraryIcon } from '@mui/icons-material';
 import UploadDialog from '../components/UploadDialog';
@@ -138,6 +142,8 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   const [error, setError] = useState<string | null>(null);
   const [showRestartAlert, setShowRestartAlert] = useState(false);
   const [restartMessage, setRestartMessage] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 
   const t = translations[language];
 
@@ -180,6 +186,12 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
   const handleUpload = async (files: File[]) => {
     if (files.length === 0) return;
 
+    setPendingFiles(files);
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmUpload = async () => {
+    setShowConfirmDialog(false);
     setIsUploading(true);
     setUploadProgress(0);
 
@@ -187,7 +199,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       const userId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
       
       // 将文件保存到临时目录
-      const tempFiles = await Promise.all(files.map(async (file) => {
+      const tempFiles = await Promise.all(pendingFiles.map(async (file) => {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
         const tempPath = path.join(os.tmpdir(), file.name);
@@ -237,7 +249,13 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       setError('导入截图时出错');
     } finally {
       setIsUploading(false);
+      setPendingFiles([]);
     }
+  };
+
+  const handleCancelUpload = () => {
+    setShowConfirmDialog(false);
+    setPendingFiles([]);
   };
 
   const formatDate = (dateString: string) => {
@@ -370,6 +388,67 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
           {restartMessage}
         </Alert>
       </Snackbar>
+
+      <Dialog
+        open={showConfirmDialog}
+        onClose={handleCancelUpload}
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            minWidth: '400px',
+            backgroundColor: theme => theme.palette.mode === 'dark' 
+              ? 'rgba(255, 255, 255, 0.05)' 
+              : '#ffffff',
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          fontSize: '20px',
+          fontWeight: 600,
+          color: theme => theme.palette.text.primary,
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
+          pb: 2
+        }}>
+          {t.screenshotManager.confirmTitle}
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3, pb: 2 }}>
+          <Typography variant="body1" color="text.secondary">
+            {t.screenshotManager.confirmMessage}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ 
+          px: 3, 
+          py: 2,
+          borderTop: theme => `1px solid ${theme.palette.divider}`
+        }}>
+          <Button 
+            onClick={handleCancelUpload}
+            sx={{
+              color: theme => theme.palette.text.secondary,
+              '&:hover': {
+                backgroundColor: theme => theme.palette.mode === 'dark' 
+                  ? 'rgba(255, 255, 255, 0.05)' 
+                  : 'rgba(0, 0, 0, 0.05)'
+              }
+            }}
+          >
+            {t.screenshotManager.cancel}
+          </Button>
+          <Button 
+            onClick={handleConfirmUpload}
+            variant="contained"
+            sx={{
+              backgroundColor: theme => theme.palette.primary.main,
+              color: '#ffffff',
+              '&:hover': {
+                backgroundColor: theme => theme.palette.primary.dark
+              }
+            }}
+          >
+            {t.screenshotManager.confirm}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <UploadDialog
         open={isUploadDialogOpen}

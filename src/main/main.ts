@@ -774,6 +774,19 @@ ipcMain.handle('restart-steam', async () => {
   }
 });
 
+// 显示确认对话框
+ipcMain.handle('show-confirm-dialog', async (_: any, { title, message, buttons }: { title: string, message: string, buttons: string[] }) => {
+  const result = await dialog.showMessageBox({
+    type: 'warning',
+    title,
+    message,
+    buttons,
+    defaultId: 1,
+    cancelId: 0
+  });
+  return result.response === 1;
+});
+
 app.whenReady().then(() => {
   createWindow();
 

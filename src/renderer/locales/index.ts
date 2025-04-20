@@ -60,7 +60,10 @@ export const translations = {
       uploading: '上传中...',
       title: '截图',
       restartSteam: '截图已成功导入，正在重启 Steam...',
-      restartSteamFailed: '截图已成功导入，但重启 Steam 失败，请手动重启 Steam'
+      restartSteamFailed: '截图已成功导入，但重启 Steam 失败，请手动重启 Steam',
+      confirmTitle: '确认重启 Steam',
+      confirmMessage: '请确保没有游戏或应用正在运行。重启 Steam 将关闭所有正在运行的游戏和应用程序。',
+      confirm: '确定'
     }
   },
   en: {
@@ -124,7 +127,10 @@ export const translations = {
       uploading: 'Uploading...',
       title: 'Screenshots',
       restartSteam: 'Screenshots imported successfully, restarting Steam...',
-      restartSteamFailed: 'Screenshots imported successfully, but failed to restart Steam. Please restart Steam manually.'
+      restartSteamFailed: 'Screenshots imported successfully, but failed to restart Steam. Please restart Steam manually.',
+      confirmTitle: 'Confirm Restart Steam',
+      confirmMessage: 'Please make sure no games or applications are running. Restarting Steam will close all running games and applications.',
+      confirm: 'Confirm'
     }
   }
 }; 
