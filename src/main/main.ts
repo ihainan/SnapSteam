@@ -426,74 +426,6 @@ ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: nu
   }
 });
 
-// 更新 Steam 的 screenshots.vdf 文件
-function updateScreenshotsVdf(steamPath: string, userId: number, gameId: number, newScreenshots: { id: string, timestamp: string }[]) {
-  try {
-    const vdfPath = path.join(steamPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots.vdf');
-    console.log('Updating VDF file at:', vdfPath);
-    
-    // 读取现有的 VDF 文件内容
-    let existingContent = '';
-    if (fs.existsSync(vdfPath)) {
-      existingContent = fs.readFileSync(vdfPath, 'utf-8');
-    }
-    
-    // 解析现有的截图信息
-    const existingScreenshots = new Map<string, string>();
-    const screenshotRegex = /"(\d+)"\s*{([^}]*)}/g;
-    let match;
-    
-    while ((match = screenshotRegex.exec(existingContent)) !== null) {
-      const id = match[1];
-      const content = match[2];
-      existingScreenshots.set(id, content);
-    }
-    
-    // 生成新的 VDF 内容
-    let newVdfContent = '"screenshots"\n{\n';
-    
-    // 添加现有的截图
-    for (const [id, content] of existingScreenshots) {
-      newVdfContent += `\t"${id}"\n\t{\n${content}\n\t}\n`;
-    }
-    
-    // 添加新的截图
-    for (const screenshot of newScreenshots) {
-      const id = screenshot.id.split('_')[0]; // 使用时间戳作为 ID
-      const unixTimestamp = Math.floor(new Date(screenshot.timestamp).getTime() / 1000).toString();
-      const newFileName = screenshot.id.replace('.jpeg', '.jpg');
-      
-      console.log('Adding new screenshot:', id, screenshot);
-      
-      newVdfContent += `\t"${id}"\n\t{\n`;
-      newVdfContent += `\t\t"type"\t\t"1"\n`;
-      newVdfContent += `\t\t"filename"\t\t"${newFileName}"\n`;
-      newVdfContent += `\t\t"thumbnail"\t\t"${newFileName}"\n`;  // 使用原图作为缩略图
-      newVdfContent += `\t\t"vrfilename"\t\t""\n`;
-      newVdfContent += `\t\t"imported"\t\t"1"\n`;
-      newVdfContent += `\t\t"width"\t\t"1920"\n`;
-      newVdfContent += `\t\t"height"\t\t"1080"\n`;
-      newVdfContent += `\t\t"gameid"\t\t"${gameId}"\n`;
-      newVdfContent += `\t\t"creation"\t\t"${unixTimestamp}"\n`;
-      newVdfContent += `\t\t"caption"\t\t""\n`;
-      newVdfContent += `\t\t"Permissions"\t\t"2"\n`;
-      newVdfContent += `\t\t"hscreenshot"\t\t"0"\n`;
-      newVdfContent += '\t}\n';
-    }
-    
-    newVdfContent += '}\n';
-
-    console.log('New VDF content:', newVdfContent);
-
-    // 写入文件
-    fs.writeFileSync(vdfPath, newVdfContent);
-    console.log('VDF file updated successfully');
-  } catch (error) {
-    console.error('Error updating screenshots.vdf:', error);
-    throw error;
-  }
-}
-
 // 修改导入图片到 Steam 目录的函数
 ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: { gameId: number, userId: number, files: string[] }) => {
   try {
@@ -520,46 +452,8 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
       console.log('Processing file:', file);
       
       try {
-        // 使用 jimp 处理图片
-        const image = await Jimp.read(file);
-        const metadata = {
-          width: image.bitmap.width,
-          height: image.bitmap.height
-        };
-        
-        // Steam 截图的最大尺寸和文件大小限制
-        const MAX_WIDTH = 3840;
-        const MAX_HEIGHT = 2160;
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-        
-        // 如果图片尺寸超过限制，进行缩放
-        if (metadata.width > MAX_WIDTH || metadata.height > MAX_HEIGHT) {
-          image.resize(
-            Math.min(metadata.width, MAX_WIDTH),
-            Math.min(metadata.height, MAX_HEIGHT),
-            Jimp.RESIZE_BEZIER
-          );
-        }
-        
-        // 如果文件大小超过限制，进行压缩
-        let quality = 90;
-        let buffer = await image.quality(quality).getBufferAsync(Jimp.MIME_JPEG);
-        
-        while (buffer.length > MAX_FILE_SIZE && quality > 10) {
-          quality -= 10;
-          buffer = await image.quality(quality).getBufferAsync(Jimp.MIME_JPEG);
-        }
-        
-        // 保存处理后的图片
-        await fs.promises.writeFile(targetPath, buffer);
-        
-        // 设置文件权限
-        try {
-          fs.chmodSync(targetPath, 0o644);
-        } catch (error) {
-          console.error('Error setting file permissions:', error);
-        }
-        
+        // 直接复制文件
+        fs.copyFileSync(file, targetPath);
         importedFiles.push({
           id: newFileName,
           url: `file://${targetPath}`,
@@ -567,22 +461,9 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
         });
       } catch (error) {
         console.error(`Error processing file ${file}:`, error);
-        // 如果处理失败，尝试直接复制原文件
-        try {
-          fs.copyFileSync(file, targetPath);
-          importedFiles.push({
-            id: newFileName,
-            url: `file://${targetPath}`,
-            timestamp: new Date().toISOString()
-          });
-        } catch (copyError) {
-          console.error(`Error copying file ${file}:`, copyError);
-        }
+        throw error;
       }
     }
-
-    // 更新 screenshots.vdf 文件
-    updateScreenshotsVdf(steamPath, userId, gameId, importedFiles);
     
     return importedFiles;
   } catch (error) {

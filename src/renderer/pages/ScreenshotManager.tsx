@@ -364,31 +364,6 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
         </Grid>
       )}
 
-      <Snackbar
-        open={showRestartAlert}
-        autoHideDuration={6000}
-        onClose={() => setShowRestartAlert(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert
-          onClose={() => setShowRestartAlert(false)}
-          severity="info"
-          variant="filled"
-          sx={{
-            backgroundColor: theme => theme.palette.mode === 'dark' 
-              ? 'rgba(96, 165, 250, 0.9)' 
-              : 'rgba(59, 130, 246, 0.9)',
-            color: '#ffffff',
-            borderRadius: '8px',
-            boxShadow: theme => theme.palette.mode === 'dark' 
-              ? '0 4px 6px rgba(0,0,0,0.2)' 
-              : '0 4px 6px rgba(0,0,0,0.1)',
-          }}
-        >
-          {restartMessage}
-        </Alert>
-      </Snackbar>
-
       <Dialog
         open={showConfirmDialog}
         onClose={handleCancelUpload}
