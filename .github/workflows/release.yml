@@ -46,7 +46,8 @@ jobs:
         with:
           name: mac-artifacts
           path: |
-            release/*.dmg
+            release/*-arm64.dmg
+            release/*-x64.dmg
 
   build-win:
     runs-on: windows-latest
@@ -75,7 +76,7 @@ jobs:
         with:
           name: win-artifacts
           path: |
-            release/*.exe
+            release/*-win.exe
 
   release:
     needs: [build-mac, build-win]
