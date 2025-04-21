@@ -13,7 +13,7 @@ import os from 'os';
 const defaultSteamPath = process.platform === 'darwin' 
   ? `${os.homedir()}/Library/Application Support/Steam`
   : process.platform === 'win32'
-  ? 'C:\\Program Files (x86)\\Steam\\userdata'
+  ? 'C:\\Program Files (x86)\\Steam123'
   : `${os.homedir()}/.local/share/Steam/userdata`;
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -162,11 +162,6 @@ const Settings: React.FC = () => {
     loadSettings();
   }, [setThemeMode, setLanguage]);
 
-  const handlePathChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSteamPath(event.target.value);
-    setPathError(null);
-  };
-
   const handleThemeChange = (event: SelectChangeEvent) => {
     const newTheme = event.target.value as 'light' | 'dark' | 'system';
     setThemeMode(newTheme);
@@ -189,14 +184,18 @@ const Settings: React.FC = () => {
         if (isValid) {
           setSteamPath(selectedPath);
           setPathError(null);
-          ipcRenderer.send('set-store-value', { key: 'steamPath', value: selectedPath });
+          setIsPathValid(true);
+          await ipcRenderer.invoke('set-store-value', { key: 'steamPath', value: selectedPath });
         } else {
+          setSteamPath(selectedPath);
           setPathError(t.settings.pathError);
+          setIsPathValid(false);
         }
       }
     } catch (error) {
       console.error('Error opening directory dialog:', error);
       setPathError(t.settings.dialogError);
+      setIsPathValid(false);
     }
   };
 
@@ -264,10 +263,13 @@ const Settings: React.FC = () => {
           <TextField
             fullWidth
             value={steamPath}
-            onChange={handlePathChange}
-            error={showPathError}
-            helperText={showPathError ? t.settings.pathError : t.settings.pathHelper}
+            error={!isPathValid}
+            helperText={!isPathValid ? t.settings.pathError : t.settings.pathHelper}
             sx={{ flex: 1 }}
+            inputProps={{
+              readOnly: true,
+              style: { cursor: 'default' }
+            }}
           />
           <Button
             variant="contained"
@@ -282,7 +284,7 @@ const Settings: React.FC = () => {
           </Button>
         </Box>
         
-        {showPathWarning && (
+        {!isPathValid && (
           <Alert severity="warning" sx={{ mb: 2 }}>
             {t.settings.pathWarning}
           </Alert>

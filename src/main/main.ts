@@ -52,7 +52,7 @@ const store = new Store({
     steamPath: process.platform === 'darwin'
       ? `${os.homedir()}/Library/Application Support/Steam`
       : process.platform === 'win32'
-        ? 'C:\\Program Files (x86)\\Steam'
+        ? 'C:\\Program Files (x86)\\Steam123'
         : `${os.homedir()}/.local/share/Steam`,
     currentUserId: 1,  // 默认选择第一个用户
     windowBounds: {
@@ -196,7 +196,9 @@ ipcMain.handle('get-store-value', (_: any, key: keyof AppSettings) => {
 
 // 设置配置值
 ipcMain.handle('set-store-value', (_: any, { key, value }: { key: keyof AppSettings; value: AppSettings[keyof AppSettings] }) => {
+  console.log(`[Config] Setting ${key} to ${value}`);
   store.set(key, value);
+  console.log(`[Config] Current config:`, store.store);
   return true;
 });
 
