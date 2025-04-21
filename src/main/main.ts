@@ -52,7 +52,7 @@ const store = new Store({
     steamPath: process.platform === 'darwin'
       ? `${os.homedir()}/Library/Application Support/Steam`
       : process.platform === 'win32'
-        ? 'C:\\Program Files (x86)\\Steam123'
+        ? 'C:\\Program Files (x86)\\Steam'
         : `${os.homedir()}/.local/share/Steam`,
     currentUserId: 1,  // 默认选择第一个用户
     windowBounds: {

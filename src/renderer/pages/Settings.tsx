@@ -13,7 +13,7 @@ import os from 'os';
 const defaultSteamPath = process.platform === 'darwin' 
   ? `${os.homedir()}/Library/Application Support/Steam`
   : process.platform === 'win32'
-  ? 'C:\\Program Files (x86)\\Steam123'
+  ? 'C:\\Program Files (x86)\\Steam'
   : `${os.homedir()}/.local/share/Steam/userdata`;
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
