@@ -186,6 +186,10 @@ const Settings: React.FC = () => {
           setPathError(null);
           setIsPathValid(true);
           await ipcRenderer.invoke('set-store-value', { key: 'steamPath', value: selectedPath });
+          // 添加短暂延迟确保配置已保存
+          await new Promise(resolve => setTimeout(resolve, 500));
+          // 刷新页面
+          window.location.reload();
         } else {
           setSteamPath(selectedPath);
           setPathError(t.settings.pathError);
