@@ -770,6 +770,34 @@ ipcMain.handle('show-confirm-dialog', async (_: any, { title, message, buttons }
   return result.response === 1;
 });
 
+// 检查更新
+ipcMain.handle('check-update', async () => {
+  try {
+    const currentVersion = app.getVersion();
+    const response = await axios.get('https://api.github.com/repos/ihainan/SnapSteam/releases/latest');
+    const latestVersion = response.data.tag_name.replace('v', '');
+    
+    if (latestVersion > currentVersion) {
+      return {
+        hasUpdate: true,
+        latestVersion,
+        releaseUrl: response.data.html_url
+      };
+    }
+    
+    return {
+      hasUpdate: false,
+      currentVersion
+    };
+  } catch (error) {
+    console.error('Error checking for updates:', error);
+    return {
+      hasUpdate: false,
+      error: true
+    };
+  }
+});
+
 app.whenReady().then(() => {
   createWindow();
 

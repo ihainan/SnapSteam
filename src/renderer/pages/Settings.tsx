@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Typography, Button, styled, FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Link, Card, CardContent, IconButton, Divider } from '@mui/material';
-import { Folder, Info, GitHub, Person, Code, Delete } from '@mui/icons-material';
+import { Folder, Info, GitHub, Person, Code, Delete, Update } from '@mui/icons-material';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../locales';
@@ -139,6 +139,14 @@ const Settings: React.FC = () => {
   const [showPathWarning, setShowPathWarning] = useState<boolean>(false);
   const [isClearingCache, setIsClearingCache] = useState<boolean>(false);
   const [showClearCacheDialog, setShowClearCacheDialog] = useState(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{
+    hasUpdate: boolean;
+    latestVersion?: string;
+    releaseUrl?: string;
+    error?: boolean;
+  } | null>(null);
   const navigate = useNavigate();
 
   // 从主进程加载保存的配置
@@ -216,6 +224,22 @@ const Settings: React.FC = () => {
     } finally {
       setIsClearingCache(false);
       setShowClearCacheDialog(false);
+    }
+  };
+
+  const handleCheckUpdate = async () => {
+    try {
+      setIsCheckingUpdate(true);
+      const result = await ipcRenderer.invoke('check-update');
+      setUpdateInfo(result);
+      if (result.hasUpdate) {
+        setUpdateDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error checking update:', error);
+      setUpdateInfo({ hasUpdate: false, error: true });
+    } finally {
+      setIsCheckingUpdate(false);
     }
   };
 
@@ -325,6 +349,16 @@ const Settings: React.FC = () => {
         </AboutContent>
       </AboutCard>
 
+      <Button
+        variant="outlined"
+        startIcon={<Update />}
+        onClick={handleCheckUpdate}
+        disabled={isCheckingUpdate}
+        sx={{ mt: 2 }}
+      >
+        {isCheckingUpdate ? t.settings.aboutContent.checkingUpdate : t.settings.aboutContent.checkUpdate}
+      </Button>
+
       <AboutDialog
         open={aboutOpen}
         onClose={() => setAboutOpen(false)}
@@ -410,6 +444,37 @@ const Settings: React.FC = () => {
             disabled={isClearingCache}
           >
             {t.settings.cache.confirm.confirm}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={updateDialogOpen}
+        onClose={() => setUpdateDialogOpen(false)}
+      >
+        <DialogTitle>
+          {t.settings.aboutContent.updateAvailable}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t.settings.aboutContent.updateMessage.replace('{version}', updateInfo?.latestVersion || '')}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUpdateDialogOpen(false)}>
+            {t.settings.close}
+          </Button>
+          <Button
+            onClick={() => {
+              if (updateInfo?.releaseUrl) {
+                window.open(updateInfo.releaseUrl, '_blank');
+              }
+              setUpdateDialogOpen(false);
+            }}
+            color="primary"
+            variant="contained"
+          >
+            {t.settings.aboutContent.downloadUpdate}
           </Button>
         </DialogActions>
       </Dialog>
