@@ -7,9 +7,9 @@ A tool for importing external images into Steam's screenshot library.
 
 ## Screenshots
 
-![game_library](https://i.imgur.com/is0DRp7.png)
+![game_library](https://imgur.ihainan.me/is0DRp7.png)
 
-![screenshots](https://i.imgur.com/rhpRBYY.png)
+![screenshots](https://imgur.ihainan.me/rhpRBYY.png)
 
 ## Videos
 
@@ -21,6 +21,18 @@ macOS: https://youtu.be/lASYlvCcAVY
 
 Download from the [Releases page](https://github.com/ihainan/SnapSteam/releases). Currently supports Windows and macOS (both Intel and Apple Silicon). Linux is not supported yet but you can build it from source.
 
+### Additional Steps for macOS Users
+
+<img src="https://imgur.ihainan.me/RO8RcOC.png" height="200"/>
+
+
+After installing SnapSteam on macOS, you need to run the following command in Terminal to fix the "damaged" error:
+
+```bash
+xattr -cr /Applications/SnapSteam.app
+```
+
+This is required due to macOS security restrictions. You only need to do this once after installation.
 
 ## Features
 
