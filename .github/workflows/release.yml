@@ -19,6 +19,12 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
+      - name: Get version from tag
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          npm version $VERSION --no-git-tag-version
+
       - name: Create build directory and entitlements file
         run: |
           mkdir -p build
@@ -88,6 +94,12 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+
+      - name: Get version from tag
+        run: |
+          $version = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          echo "VERSION=$version" >> $env:GITHUB_ENV
+          npm version $version --no-git-tag-version
 
       - name: Clean release directory
         run: Remove-Item -Recurse -Force release -ErrorAction SilentlyContinue

@@ -24,7 +24,12 @@ export const translations = {
       aboutContent: {
         version: '版本',
         author: '作者',
-        github: 'GitHub'
+        github: 'GitHub',
+        checkUpdate: '检查更新',
+        checkingUpdate: '检查更新中...',
+        updateAvailable: '发现新版本',
+        updateMessage: '发现新版本 {version}，是否前往下载？',
+        downloadUpdate: '下载更新'
       },
       close: '关闭',
       cache: {
@@ -94,7 +99,12 @@ export const translations = {
       aboutContent: {
         version: 'Version',
         author: 'Author',
-        github: 'GitHub'
+        github: 'GitHub',
+        checkUpdate: 'Check for Updates',
+        checkingUpdate: 'Checking for Updates...',
+        updateAvailable: 'New Version Available',
+        updateMessage: 'New version {version} is available. Would you like to download it?',
+        downloadUpdate: 'Download Update'
       },
       close: 'Close',
       cache: {

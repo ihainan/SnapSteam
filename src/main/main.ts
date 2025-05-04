@@ -8,6 +8,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const axios = require('axios');
 const { createHash } = require('crypto');
+const logger = require('./logger').default;
 
 interface AppSettings {
   themeMode: 'light' | 'dark' | 'system';
@@ -66,6 +67,7 @@ const store = new Store({
 });
 
 function createWindow() {
+  logger.info('正在创建主窗口...');
   // 获取保存的窗口位置和大小
   const windowBounds = store.get('windowBounds') as AppSettings['windowBounds'];
   
@@ -97,11 +99,11 @@ function createWindow() {
   
   // 监听渲染进程错误
   mainWindow.webContents.on('render-process-gone', (event: Electron.Event, details: RenderProcessGoneDetails) => {
-    console.error('Renderer process gone:', details);
+    logger.error(`渲染进程崩溃: ${details.reason}, 退出代码: ${details.exitCode}`);
   });
 
   mainWindow.webContents.on('crashed', () => {
-    console.error('Renderer process crashed');
+    logger.error('Renderer process crashed');
   });
 
   // 处理窗口控制命令
@@ -196,9 +198,9 @@ ipcMain.handle('get-store-value', (_: any, key: keyof AppSettings) => {
 
 // 设置配置值
 ipcMain.handle('set-store-value', (_: any, { key, value }: { key: keyof AppSettings; value: AppSettings[keyof AppSettings] }) => {
-  console.log(`[Config] Setting ${key} to ${value}`);
+  logger.info(`[Config] Setting ${key} to ${value}`);
   store.set(key, value);
-  console.log(`[Config] Current config:`, store.store);
+  logger.info(`[Config] Current config:`, store.store);
   return true;
 });
 
@@ -217,11 +219,11 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
   try {
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
-    console.log(`[Steam Path Validation] 开始验证路径: ${resolvedPath}`);
+    logger.info(`[Steam Path Validation] 开始验证路径: ${resolvedPath}`);
     
     // 检查路径是否存在
     if (!fs.existsSync(resolvedPath)) {
-      console.log(`[Steam Path Validation] 路径不存在: ${resolvedPath}`);
+      logger.info(`[Steam Path Validation] 路径不存在: ${resolvedPath}`);
       return false;
     }
 
@@ -232,11 +234,11 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
       const userdataExists = fs.existsSync(path.join(resolvedPath, 'userdata'));
       const steamappsExists = fs.existsSync(path.join(resolvedPath, 'steamapps'));
       
-      console.log(`[Steam Path Validation] userdata 目录存在: ${userdataExists}`);
-      console.log(`[Steam Path Validation] steamapps 目录存在: ${steamappsExists}`);
+      logger.info(`[Steam Path Validation] userdata 目录存在: ${userdataExists}`);
+      logger.info(`[Steam Path Validation] steamapps 目录存在: ${steamappsExists}`);
       
       const isDataDir = userdataExists && steamappsExists;
-      console.log(`[Steam Path Validation] 验证结果: ${isDataDir}`);
+      logger.info(`[Steam Path Validation] 验证结果: ${isDataDir}`);
       
       return isDataDir;
     } else {
@@ -252,7 +254,7 @@ ipcMain.handle('validate-steam-path', async (_: any, steamPath: string) => {
       return isUserDataDir;
     }
   } catch (error) {
-    console.error('Error validating Steam path:', error);
+    logger.error('Error validating Steam path:', error);
     return false;
   }
 });
@@ -263,31 +265,31 @@ ipcMain.handle('get-steam-users', async () => {
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
-    console.log(`[Steam Users] 开始获取 Steam 用户列表，Steam 路径: ${resolvedPath}`);
+    logger.info(`[Steam Users] 开始获取 Steam 用户列表，Steam 路径: ${resolvedPath}`);
     
     const userDataPath = path.join(resolvedPath, 'userdata');
-    console.log(`[Steam Users] 用户数据目录: ${userDataPath}`);
+    logger.info(`[Steam Users] 用户数据目录: ${userDataPath}`);
     
     if (!fs.existsSync(userDataPath)) {
-      console.log(`[Steam Users] 用户数据目录不存在: ${userDataPath}`);
+      logger.info(`[Steam Users] 用户数据目录不存在: ${userDataPath}`);
       return [];
     }
 
     const users: SteamUser[] = [];
     const userDirs = fs.readdirSync(userDataPath);
-    console.log(`[Steam Users] 找到 ${userDirs.length} 个用户目录:`, userDirs);
+    logger.info(`[Steam Users] 找到 ${userDirs.length} 个用户目录:`, userDirs);
     
     for (const userId of userDirs) {
       if (!/^\d+$/.test(userId)) {
-        console.log(`[Steam Users] 跳过非数字用户目录: ${userId}`);
+        logger.info(`[Steam Users] 跳过非数字用户目录: ${userId}`);
         continue;
       }
       
       const userConfigPath = path.join(userDataPath, userId, 'config', 'localconfig.vdf');
-      console.log(`[Steam Users] 检查用户配置文件: ${userConfigPath}`);
+      logger.info(`[Steam Users] 检查用户配置文件: ${userConfigPath}`);
       
       if (!fs.existsSync(userConfigPath)) {
-        console.log(`[Steam Users] 用户配置文件不存在: ${userConfigPath}`);
+        logger.info(`[Steam Users] 用户配置文件不存在: ${userConfigPath}`);
         continue;
       }
       
@@ -297,7 +299,7 @@ ipcMain.handle('get-steam-users', async () => {
       const avatarMatch = configContent.match(/avatar"\s+"([^"]+)"/);
       
       if (!nameMatch) {
-        console.log(`[Steam Users] 无法找到用户名称: ${userId}`);
+        logger.info(`[Steam Users] 无法找到用户名称: ${userId}`);
         continue;
       }
       
@@ -306,7 +308,7 @@ ipcMain.handle('get-steam-users', async () => {
       if (avatarMatch) {
         const avatarHash = avatarMatch[1];
         avatarUrl = `https://avatars.steamstatic.com/${avatarHash}_full.jpg`;
-        console.log(`[Steam Users] 找到用户头像: ${avatarUrl}`);
+        logger.info(`[Steam Users] 找到用户头像: ${avatarUrl}`);
       }
       
       const user = {
@@ -315,14 +317,14 @@ ipcMain.handle('get-steam-users', async () => {
         avatar: avatarUrl
       };
       
-      console.log(`[Steam Users] 添加用户: ${user.name} (${user.id})`);
+      logger.info(`[Steam Users] 添加用户: ${user.name} (${user.id})`);
       users.push(user);
     }
     
-    console.log(`[Steam Users] 成功获取 ${users.length} 个用户`);
+    logger.info(`[Steam Users] 成功获取 ${users.length} 个用户`);
     return users;
   } catch (error) {
-    console.error('Error getting Steam users:', error);
+    logger.error('Error getting Steam users:', error);
     return [];
   }
 });
@@ -330,17 +332,17 @@ ipcMain.handle('get-steam-users', async () => {
 // 获取用户的游戏库
 ipcMain.handle('get-user-games', async (_: any, userId: number) => {
   try {
-    console.log(`[Game Library] 开始加载用户 ${userId} 的游戏库`);
+    logger.info(`[Game Library] 开始加载用户 ${userId} 的游戏库`);
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
-    console.log(`[Game Library] Steam 路径: ${resolvedPath}`);
+    logger.info(`[Game Library] Steam 路径: ${resolvedPath}`);
     
     const userDataPath = path.join(resolvedPath, 'userdata', userId.toString());
-    console.log(`[Game Library] 用户数据路径: ${userDataPath}`);
+    logger.info(`[Game Library] 用户数据路径: ${userDataPath}`);
     
     if (!fs.existsSync(userDataPath)) {
-      console.log(`[Game Library] 用户数据目录不存在: ${userDataPath}`);
+      logger.info(`[Game Library] 用户数据目录不存在: ${userDataPath}`);
       return [];
     }
     
@@ -348,50 +350,50 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
     
     // 读取用户的本地配置
     const localConfigPath = path.join(userDataPath, 'config', 'localconfig.vdf');
-    console.log(`[Game Library] 本地配置文件路径: ${localConfigPath}`);
+    logger.info(`[Game Library] 本地配置文件路径: ${localConfigPath}`);
     
     if (!fs.existsSync(localConfigPath)) {
-      console.log(`[Game Library] 本地配置文件不存在: ${localConfigPath}`);
+      logger.info(`[Game Library] 本地配置文件不存在: ${localConfigPath}`);
       return [];
     }
     
     const localConfigContent = fs.readFileSync(localConfigPath, 'utf-8');
-    console.log(`[Game Library] 成功读取本地配置文件，文件大小: ${localConfigContent.length} 字节`);
+    logger.info(`[Game Library] 成功读取本地配置文件，文件大小: ${localConfigContent.length} 字节`);
     
     // 读取游戏库文件
     const libraryFoldersPath = path.join(resolvedPath, 'steamapps', 'libraryfolders.vdf');
-    console.log(`[Game Library] 游戏库文件路径: ${libraryFoldersPath}`);
+    logger.info(`[Game Library] 游戏库文件路径: ${libraryFoldersPath}`);
     
     if (!fs.existsSync(libraryFoldersPath)) {
-      console.log(`[Game Library] 游戏库文件不存在: ${libraryFoldersPath}`);
+      logger.info(`[Game Library] 游戏库文件不存在: ${libraryFoldersPath}`);
       return [];
     }
     
     const libraryContent = fs.readFileSync(libraryFoldersPath, 'utf-8');
-    console.log(`[Game Library] 成功读取游戏库文件，文件大小: ${libraryContent.length} 字节`);
+    logger.info(`[Game Library] 成功读取游戏库文件，文件大小: ${libraryContent.length} 字节`);
     
     const libraryPaths = libraryContent.match(/path"\s+"([^"]+)"/g)?.map((match: string) => 
       match.match(/path"\s+"([^"]+)"/)?.[1]
     ) || [];
     
-    console.log(`[Game Library] 找到 ${libraryPaths.length} 个游戏库路径:`, libraryPaths);
+    logger.info(`[Game Library] 找到 ${libraryPaths.length} 个游戏库路径:`, libraryPaths);
     
     // 读取每个库文件夹中的游戏
     for (const libraryPath of libraryPaths) {
       if (!libraryPath) continue;
       
       const appManifestPath = path.join(libraryPath, 'steamapps');
-      console.log(`[Game Library] 检查游戏库路径: ${appManifestPath}`);
+      logger.info(`[Game Library] 检查游戏库路径: ${appManifestPath}`);
       
       if (!fs.existsSync(appManifestPath)) {
-        console.log(`[Game Library] 游戏库路径不存在: ${appManifestPath}`);
+        logger.info(`[Game Library] 游戏库路径不存在: ${appManifestPath}`);
         continue;
       }
       
       const appManifests = fs.readdirSync(appManifestPath)
         .filter((file: string) => file.startsWith('appmanifest_') && file.endsWith('.acf'));
       
-      console.log(`[Game Library] 找到 ${appManifests.length} 个游戏清单文件`);
+      logger.info(`[Game Library] 找到 ${appManifests.length} 个游戏清单文件`);
       
       for (const manifest of appManifests) {
         const manifestPath = path.join(appManifestPath, manifest);
@@ -404,7 +406,7 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
           const appId = parseInt(appIdMatch[1]);
           const name = nameMatch[1];
           
-          console.log(`[Game Library] 处理游戏: ${name} (${appId})`);
+          logger.info(`[Game Library] 处理游戏: ${name} (${appId})`);
           
           // 使用更精确的方式解析最后游玩时间
           const lastPlayedPattern = new RegExp(`"${appId}"\\s*{[^}]*"LastPlayed"\\s*"(\\d+)"[^}]*}`, 'g');
@@ -428,7 +430,7 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
               const cachedCoverPath = getCachedCoverPath(appId);
               const isCached = fs.existsSync(cachedCoverPath);
               
-              console.log(`[Game Library] 游戏 ${appId} (${name}) 封面状态: ${isCached ? '已缓存' : '未缓存'}`);
+              logger.info(`[Game Library] 游戏 ${appId} (${name}) 封面状态: ${isCached ? '已缓存' : '未缓存'}`);
               
               games.push({
                 id: appId,
@@ -445,10 +447,10 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
       }
     }
     
-    console.log(`[Game Library] 成功加载用户 ${userId} 的游戏库，共 ${games.length} 个游戏`);
+    logger.info(`[Game Library] 成功加载用户 ${userId} 的游戏库，共 ${games.length} 个游戏`);
     return games;
   } catch (error) {
-    console.error('Error getting user games:', error);
+    logger.error('Error getting user games:', error);
     return [];
   }
 });
@@ -461,17 +463,17 @@ ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: nu
     const resolvedPath = steamPath.replace('~', os.homedir());
     const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
     
-    console.log('Looking for screenshots in:', screenshotsPath);
+    logger.info('Looking for screenshots in:', screenshotsPath);
     
     if (!fs.existsSync(screenshotsPath)) {
-      console.log('Screenshots directory does not exist');
+      logger.info('Screenshots directory does not exist');
       return [];
     }
 
     const screenshots: any[] = [];
     const files = fs.readdirSync(screenshotsPath);
     
-    console.log('Found files:', files);
+    logger.info('Found files:', files);
     
     for (const file of files) {
       if (file.endsWith('.jpg')) {
@@ -487,15 +489,15 @@ ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: nu
             timestamp: stats.mtime.toISOString()
           });
         } catch (error) {
-          console.error(`Cannot read file ${filePath}:`, error);
+          logger.error(`Cannot read file ${filePath}:`, error);
         }
       }
     }
     
-    console.log('Found screenshots:', screenshots.length);
+    logger.info('Found screenshots:', screenshots.length);
     return screenshots;
   } catch (error) {
-    console.error('Error getting game screenshots:', error);
+    logger.error('Error getting game screenshots:', error);
     return [];
   }
 });
@@ -506,20 +508,20 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
-    console.log('Steam path:', resolvedPath);
+    logger.info('Steam path:', resolvedPath);
     
     const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
     const thumbnailsPath = path.join(screenshotsPath, 'thumbnails');
-    console.log('Screenshots path:', screenshotsPath);
-    console.log('Thumbnails path:', thumbnailsPath);
+    logger.info('Screenshots path:', screenshotsPath);
+    logger.info('Thumbnails path:', thumbnailsPath);
     
     // 确保截图目录和缩略图目录存在
     if (!fs.existsSync(screenshotsPath)) {
-      console.log('Creating screenshots directory');
+      logger.info('Creating screenshots directory');
       fs.mkdirSync(screenshotsPath, { recursive: true });
     }
     if (!fs.existsSync(thumbnailsPath)) {
-      console.log('Creating thumbnails directory');
+      logger.info('Creating thumbnails directory');
       fs.mkdirSync(thumbnailsPath, { recursive: true });
     }
 
@@ -540,7 +542,7 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
       const targetPath = path.join(screenshotsPath, newFileName);
       const thumbnailPath = path.join(thumbnailsPath, newFileName);
       
-      console.log('Processing file:', file);
+      logger.info('Processing file:', file);
       
       try {
         // 使用 jimp 处理图片
@@ -562,14 +564,14 @@ ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: {
           timestamp: now.toISOString()
         });
       } catch (error) {
-        console.error(`Error processing file ${file}:`, error);
+        logger.error(`Error processing file ${file}:`, error);
         throw error;
       }
     }
     
     return importedFiles;
   } catch (error) {
-    console.error('Error importing screenshots:', error);
+    logger.error('Error importing screenshots:', error);
     throw error;
   }
 });
@@ -602,14 +604,14 @@ function isCoverCached(gameId: number) {
 // 缓存封面图片
 async function cacheCover(gameId: number, imageUrl: string) {
   try {
-    console.log(`[Cover Cache] 开始下载游戏 ${gameId} 的封面`);
+    logger.info(`[Cover Cache] 开始下载游戏 ${gameId} 的封面`);
     const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
     const cachePath = getCachedCoverPath(gameId);
     await fs.promises.writeFile(cachePath, response.data);
-    console.log(`[Cover Cache] 成功缓存游戏 ${gameId} 的封面到: ${cachePath}`);
+    logger.info(`[Cover Cache] 成功缓存游戏 ${gameId} 的封面到: ${cachePath}`);
     return `file://${cachePath}`;
   } catch (error) {
-    console.error(`[Cover Cache] 缓存游戏 ${gameId} 的封面失败:`, error);
+    logger.error(`[Cover Cache] 缓存游戏 ${gameId} 的封面失败:`, error);
     return imageUrl;
   }
 }
@@ -618,13 +620,13 @@ async function cacheCover(gameId: number, imageUrl: string) {
 ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string) => {
   try {
     if (isCoverCached(gameId)) {
-      console.log(`[Cover Cache] 从缓存加载游戏 ${gameId} 的封面`);
+      logger.info(`[Cover Cache] 从缓存加载游戏 ${gameId} 的封面`);
       return `file://${getCachedCoverPath(gameId)}`;
     }
-    console.log(`[Cover Cache] 从网络下载游戏 ${gameId} 的封面: ${coverUrl}`);
+    logger.info(`[Cover Cache] 从网络下载游戏 ${gameId} 的封面: ${coverUrl}`);
     return await cacheCover(gameId, coverUrl);
   } catch (error) {
-    console.error('Error getting game cover:', error);
+    logger.error('Error getting game cover:', error);
     return coverUrl;
   }
 });
@@ -633,30 +635,30 @@ ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string
 ipcMain.handle('clear-cover-cache', async () => {
   try {
     const cacheDir = getCoverCacheDir();
-    console.log(`[Cache] 开始清理缓存目录: ${cacheDir}`);
+    logger.info(`[Cache] 开始清理缓存目录: ${cacheDir}`);
     
     if (fs.existsSync(cacheDir)) {
       const files = fs.readdirSync(cacheDir);
-      console.log(`[Cache] 找到 ${files.length} 个缓存文件`);
+      logger.info(`[Cache] 找到 ${files.length} 个缓存文件`);
       
       for (const file of files) {
         const filePath = path.join(cacheDir, file);
         try {
           fs.unlinkSync(filePath);
-          console.log(`[Cache] 已删除缓存文件: ${file}`);
+          logger.info(`[Cache] 已删除缓存文件: ${file}`);
         } catch (error) {
-          console.error(`[Cache] 删除缓存文件失败 ${file}:`, error);
+          logger.error(`[Cache] 删除缓存文件失败 ${file}:`, error);
         }
       }
       
-      console.log(`[Cache] 缓存清理完成`);
+      logger.info(`[Cache] 缓存清理完成`);
       return true;
     }
     
-    console.log(`[Cache] 缓存目录不存在`);
+    logger.info(`[Cache] 缓存目录不存在`);
     return false;
   } catch (error) {
-    console.error('[Cache] 清理缓存失败:', error);
+    logger.error('[Cache] 清理缓存失败:', error);
     return false;
   }
 });
@@ -665,30 +667,30 @@ ipcMain.handle('clear-cover-cache', async () => {
 ipcMain.handle('restart-steam', async () => {
   try {
     const platform = process.platform;
-    console.log('正在尝试重启 Steam，当前系统:', platform);
+    logger.info('正在尝试重启 Steam，当前系统:', platform);
     
     if (platform === 'darwin') {
       // macOS
-      console.log('正在关闭 Steam...');
+      logger.info('正在关闭 Steam...');
       exec('osascript -e \'quit app "Steam"\'', (error: Error | null, stdout: string, stderr: string) => {
         if (error) {
-          console.log('Steam 可能已经关闭');
+          logger.info('Steam 可能已经关闭');
         } else {
-          console.log('Steam 已成功关闭');
+          logger.info('Steam 已成功关闭');
         }
       });
       
       // 等待 5 秒确保 Steam 完全关闭
-      console.log('等待 Steam 完全关闭...');
+      logger.info('等待 Steam 完全关闭...');
       await new Promise(resolve => setTimeout(resolve, 5000));
       
       // 重新打开 Steam
-      console.log('正在启动 Steam...');
+      logger.info('正在启动 Steam...');
       exec('open -a Steam', (error: Error | null, stdout: string, stderr: string) => {
         if (error) {
-          console.error('启动 Steam 失败:', error);
+          logger.error('启动 Steam 失败:', error);
         } else {
-          console.log('Steam 已成功启动');
+          logger.info('Steam 已成功启动');
         }
       });
       
@@ -698,26 +700,26 @@ ipcMain.handle('restart-steam', async () => {
       const steamPath = store.get('steamPath') as string;
       const steamExePath = path.join(steamPath, 'steam.exe');
       if (fs.existsSync(steamExePath)) {
-        console.log('正在关闭 Steam...');
+        logger.info('正在关闭 Steam...');
         exec('taskkill /F /IM steam.exe', (error: Error | null, stdout: string, stderr: string) => {
           if (error) {
-            console.log('Steam 可能已经关闭');
+            logger.info('Steam 可能已经关闭');
           } else {
-            console.log('Steam 已成功关闭');
+            logger.info('Steam 已成功关闭');
           }
         });
         
         // 等待 5 秒确保 Steam 完全关闭
-        console.log('等待 Steam 完全关闭...');
+        logger.info('等待 Steam 完全关闭...');
         await new Promise(resolve => setTimeout(resolve, 5000));
         
         // 重新打开 Steam
-        console.log('正在启动 Steam...');
+        logger.info('正在启动 Steam...');
         exec(`start "" "${steamExePath}"`, (error: Error | null, stdout: string, stderr: string) => {
           if (error) {
-            console.error('启动 Steam 失败:', error);
+            logger.error('启动 Steam 失败:', error);
           } else {
-            console.log('Steam 已成功启动');
+            logger.info('Steam 已成功启动');
           }
         });
       }
@@ -726,33 +728,33 @@ ipcMain.handle('restart-steam', async () => {
       const steamPath = store.get('steamPath') as string;
       const steamBinPath = path.join(steamPath, 'steam');
       if (fs.existsSync(steamBinPath)) {
-        console.log('正在关闭 Steam...');
+        logger.info('正在关闭 Steam...');
         exec('pkill steam', (error: Error | null, stdout: string, stderr: string) => {
           if (error) {
-            console.log('Steam 可能已经关闭');
+            logger.info('Steam 可能已经关闭');
           } else {
-            console.log('Steam 已成功关闭');
+            logger.info('Steam 已成功关闭');
           }
         });
         
         // 等待 5 秒确保 Steam 完全关闭
-        console.log('等待 Steam 完全关闭...');
+        logger.info('等待 Steam 完全关闭...');
         await new Promise(resolve => setTimeout(resolve, 5000));
         
         // 重新打开 Steam
-        console.log('正在启动 Steam...');
+        logger.info('正在启动 Steam...');
         exec(`"${steamBinPath}"`, (error: Error | null, stdout: string, stderr: string) => {
           if (error) {
-            console.error('启动 Steam 失败:', error);
+            logger.error('启动 Steam 失败:', error);
           } else {
-            console.log('Steam 已成功启动');
+            logger.info('Steam 已成功启动');
           }
         });
       }
     }
     return true;
   } catch (error) {
-    console.error('重启 Steam 时发生错误:', error);
+    logger.error('重启 Steam 时发生错误:', error);
     return false;
   }
 });
@@ -770,7 +772,37 @@ ipcMain.handle('show-confirm-dialog', async (_: any, { title, message, buttons }
   return result.response === 1;
 });
 
+// 检查更新
+ipcMain.handle('check-update', async () => {
+  try {
+    const currentVersion = app.getVersion();
+    const response = await axios.get('https://api.github.com/repos/ihainan/SnapSteam/releases/latest');
+    const latestVersion = response.data.tag_name.replace('v', '');
+    
+    if (latestVersion > currentVersion) {
+      return {
+        hasUpdate: true,
+        latestVersion,
+        releaseUrl: response.data.html_url
+      };
+    }
+    
+    return {
+      hasUpdate: false,
+      currentVersion
+    };
+  } catch (error) {
+    logger.error('Error checking for updates:', error);
+    return {
+      hasUpdate: false,
+      error: true
+    };
+  }
+});
+
+// 在应用启动时记录日志
 app.whenReady().then(() => {
+  logger.info('应用程序启动');
   createWindow();
 
   app.on('activate', () => {
@@ -780,7 +812,9 @@ app.whenReady().then(() => {
   });
 });
 
+// 在应用关闭时记录日志
 app.on('window-all-closed', () => {
+  logger.info('所有窗口已关闭，应用程序即将退出');
   if (process.platform !== 'darwin') {
     app.quit();
   }
