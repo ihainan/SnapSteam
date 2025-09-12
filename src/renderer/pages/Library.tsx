@@ -27,6 +27,13 @@ const GameCard = styled(Card)(({ theme }) => ({
       filter: 'brightness(1.05)',
     },
   },
+  '& .MuiCardMedia-root': {
+    objectFit: 'contain', // 保持宽高比，完整显示图片
+    width: '100%',
+    height: 'auto',
+    minHeight: '120px',
+    backgroundColor: theme.palette.background.default,
+  },
 }));
 
 const GameTitle = styled(Typography)(() => ({
@@ -323,7 +330,7 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
       if (game.isNonSteam) {
         // 对于Non-Steam游戏，使用专门的封面处理函数
         const iconPath = game.exePath ? game.exePath.replace(/[^/\\]*$/, '') + 'icon.ico' : undefined;
-        cachedCoverUrl = await ipcRenderer.invoke('get-nonsteam-game-cover', game.id, iconPath, game.coverUrl);
+        cachedCoverUrl = await ipcRenderer.invoke('get-nonsteam-game-cover', game.id, game.userId, iconPath, game.coverUrl);
       } else {
         // 对于Steam游戏，使用标准的封面处理函数
         cachedCoverUrl = await ipcRenderer.invoke('get-game-cover', game.id, game.coverUrl);
@@ -350,14 +357,13 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
 
   const renderGameCard = (game: typeof games[0]) => (
     <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
-      {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) ? (
+      {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) || (game.isNonSteam && !game.cachedCoverUrl) ? (
         <DefaultGameCover>
           <DefaultGameTitle>{game.name}</DefaultGameTitle>
         </DefaultGameCover>
       ) : (
         <CardMedia
           component="img"
-          height="120"
           image={game.cachedCoverUrl || game.coverUrl}
           alt={game.name}
           onError={() => handleImageError(game.id)}
@@ -382,14 +388,13 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
           <GamesGrid>
             {recentlyPlayed.map(game => (
               <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
-                {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) ? (
+                {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) || (game.isNonSteam && !game.cachedCoverUrl) ? (
                   <DefaultGameCover>
                     <DefaultGameTitle>{game.name}</DefaultGameTitle>
                   </DefaultGameCover>
                 ) : (
                   <CardMedia
                     component="img"
-                    height="120"
                     image={game.cachedCoverUrl || game.coverUrl}
                     alt={game.name}
                     onError={() => handleImageError(game.id)}

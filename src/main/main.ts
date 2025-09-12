@@ -804,8 +804,39 @@ ipcMain.handle('get-non-steam-games', async (_: any, userId: number) => {
       let coverUrl = '';
       let cachedCoverUrl: string | undefined = undefined;
       
-      // 首先检查是否有自定义图标
-      if (shortcut.icon && fs.existsSync(shortcut.icon)) {
+      // 首先检查 Steam grid 目录中的自定义封面（最高优先级）
+      const gridPath = path.join(resolvedPath, 'userdata', userId.toString(), 'config', 'grid');
+      
+      // 对于Non-Steam游戏，需要转换为无符号ID用于grid文件名
+      const unsignedAppId = shortcut.appId >>> 0;
+      
+      const customCoverFiles = [
+        // 使用无符号ID的各种格式
+        `${unsignedAppId}p.png`,                    // Steam常用格式 (portrait)
+        `${unsignedAppId}.jpg`,                     // 通用JPG
+        `${unsignedAppId}.png`,                     // 通用PNG
+        `${unsignedAppId}_library_600x900.jpg`,    // 竖版封面
+        `${unsignedAppId}_header.jpg`,             // 横版封面
+        `${unsignedAppId}_library_600x900.png`,   // 竖版PNG
+        `${unsignedAppId}_header.png`              // 横版PNG
+      ];
+      
+      for (const coverFile of customCoverFiles) {
+        const coverPath = path.join(gridPath, coverFile);
+        if (fs.existsSync(coverPath)) {
+          try {
+            fs.accessSync(coverPath, fs.constants.R_OK);
+            coverUrl = `file://${coverPath}`;
+            logger.info(`[Non-Steam Games] 使用 Steam grid 自定义封面: ${coverPath}`);
+            break;
+          } catch (error) {
+            logger.warn(`[Non-Steam Games] 无法读取 grid 封面文件: ${coverPath}`, error);
+          }
+        }
+      }
+      
+      // 如果没找到 grid 封面，检查是否有自定义图标
+      if (!coverUrl && shortcut.icon && fs.existsSync(shortcut.icon)) {
         try {
           // 验证图标文件是否可读
           fs.accessSync(shortcut.icon, fs.constants.R_OK);
@@ -824,12 +855,10 @@ ipcMain.handle('get-non-steam-games', async (_: any, userId: number) => {
         logger.info(`[Non-Steam Games] 找到缓存封面: ${cachedCoverPath}`);
       }
       
-      // 如果没有自定义图标和缓存封面，生成默认封面
+      // 如果没有找到任何本地封面，设置为空字符串
+      // 实际的封面加载将由前端按需通过 get-nonsteam-game-cover 处理
       if (!coverUrl && !cachedCoverUrl) {
-        // 创建更美观的默认封面
-        const gameName = encodeURIComponent(shortcut.appName.length > 20 ? 
-          shortcut.appName.substring(0, 17) + '...' : shortcut.appName);
-        coverUrl = `https://via.placeholder.com/460x215/1a1a1a/ffffff?text=${gameName}`;
+        coverUrl = ''; // 不在这里生成网络URL，避免不必要的网络请求
       }
       
       logger.info(`[Non-Steam Games] 添加游戏: ${shortcut.appName} (${shortcut.appId})`);
@@ -1017,7 +1046,9 @@ function getCoverCacheDir() {
 
 // 获取缓存的封面图片路径
 function getCachedCoverPath(gameId: number) {
-  return path.join(getCoverCacheDir(), `${gameId}.jpg`);
+  // 对于Non-Steam游戏，确保使用无符号ID作为文件名
+  const unsignedId = gameId >>> 0;
+  return path.join(getCoverCacheDir(), `${unsignedId}.jpg`);
 }
 
 // 检查封面是否已缓存
@@ -1047,12 +1078,47 @@ async function cacheLocalIcon(gameId: number, iconPath: string): Promise<string>
     logger.info(`[Cover Cache] 开始缓存本地图标: ${iconPath}`);
     const cachePath = getCachedCoverPath(gameId);
     
-    // 使用Jimp处理图标文件，转换为标准封面尺寸
+    // 使用Jimp处理图标文件，智能调整尺寸
     const image = await Jimp.read(iconPath);
-    await image
-      .resize(460, 215, Jimp.RESIZE_BEZIER)
-      .quality(90)
-      .writeAsync(cachePath);
+    
+    // 获取原始尺寸
+    const originalWidth = image.bitmap.width;
+    const originalHeight = image.bitmap.height;
+    const originalRatio = originalWidth / originalHeight;
+    const targetRatio = 460 / 215; // Steam 封面比例 ≈ 2.14
+    
+    logger.info(`[Cover Cache] 原始尺寸: ${originalWidth}x${originalHeight}, 比例: ${originalRatio.toFixed(2)}, 目标比例: ${targetRatio.toFixed(2)}`);
+    
+    if (Math.abs(originalRatio - targetRatio) < 0.1) {
+      // 比例接近，直接调整
+      await image
+        .resize(460, 215, Jimp.RESIZE_BEZIER)
+        .quality(90)
+        .writeAsync(cachePath);
+      logger.info(`[Cover Cache] 比例接近，直接调整为 460x215`);
+    } else if (originalRatio < targetRatio) {
+      // 竖版图片（比例小于目标），保持宽高比并从中心截断
+      const scaleFactor = 460 / originalWidth; // 以宽度为准缩放
+      const scaledHeight = originalHeight * scaleFactor;
+      
+      await image
+        .resize(460, scaledHeight, Jimp.RESIZE_BEZIER)
+        .crop(0, (scaledHeight - 215) / 2, 460, 215) // 从中心截断到目标高度
+        .quality(90)
+        .writeAsync(cachePath);
+      logger.info(`[Cover Cache] 竖版图片，缩放到 460x${scaledHeight} 后中心截断为 460x215`);
+    } else {
+      // 横版图片（比例大于目标），保持宽高比并从中心截断
+      const scaleFactor = 215 / originalHeight; // 以高度为准缩放
+      const scaledWidth = originalWidth * scaleFactor;
+      
+      await image
+        .resize(scaledWidth, 215, Jimp.RESIZE_BEZIER)
+        .crop((scaledWidth - 460) / 2, 0, 460, 215) // 从中心截断到目标宽度
+        .quality(90)
+        .writeAsync(cachePath);
+      logger.info(`[Cover Cache] 横版图片，缩放到 ${scaledWidth}x215 后中心截断为 460x215`);
+    }
     
     logger.info(`[Cover Cache] 成功缓存本地图标到: ${cachePath}`);
     return `file://${cachePath}`;
@@ -1078,7 +1144,7 @@ ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string
 });
 
 // 为Non-Steam游戏处理封面（支持本地图标文件）
-ipcMain.handle('get-nonsteam-game-cover', async (_: any, gameId: number, iconPath?: string, defaultUrl?: string) => {
+ipcMain.handle('get-nonsteam-game-cover', async (_: any, gameId: number, userId: number, iconPath?: string, defaultUrl?: string) => {
   try {
     // 首先检查是否已有缓存
     if (isCoverCached(gameId)) {
@@ -1086,7 +1152,39 @@ ipcMain.handle('get-nonsteam-game-cover', async (_: any, gameId: number, iconPat
       return `file://${getCachedCoverPath(gameId)}`;
     }
     
-    // 如果有本地图标路径且文件存在，处理本地图标
+    // 检查 Steam grid 目录中的自定义封面（最高优先级）
+    const steamPath = store.get('steamPath') as string;
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    const gridPath = path.join(resolvedPath, 'userdata', userId.toString(), 'config', 'grid');
+    
+    // 对于Non-Steam游戏，需要转换为无符号ID用于grid文件名
+    const unsignedGameId = gameId >>> 0;
+    
+    const customCoverFiles = [
+      // 使用无符号ID的各种格式
+      `${unsignedGameId}p.png`,                    // Steam常用格式 (portrait)
+      `${unsignedGameId}.jpg`,                     // 通用JPG
+      `${unsignedGameId}.png`,                     // 通用PNG
+      `${unsignedGameId}_library_600x900.jpg`,    // 竖版封面
+      `${unsignedGameId}_header.jpg`,             // 横版封面
+      `${unsignedGameId}_library_600x900.png`,   // 竖版PNG
+      `${unsignedGameId}_header.png`              // 横版PNG
+    ];
+    
+    for (const coverFile of customCoverFiles) {
+      const coverPath = path.join(gridPath, coverFile);
+      if (fs.existsSync(coverPath)) {
+        try {
+          fs.accessSync(coverPath, fs.constants.R_OK);
+          logger.info(`[Non-Steam Cover] 找到 Steam grid 自定义封面: ${coverPath}`);
+          return await cacheLocalIcon(gameId, coverPath);
+        } catch (error) {
+          logger.warn(`[Non-Steam Cover] 无法读取 grid 封面文件: ${coverPath}`, error);
+        }
+      }
+    }
+    
+    // 如果没找到 grid 封面，检查是否有本地图标路径且文件存在，处理本地图标
     if (iconPath && fs.existsSync(iconPath)) {
       try {
         fs.accessSync(iconPath, fs.constants.R_OK);
@@ -1097,14 +1195,14 @@ ipcMain.handle('get-nonsteam-game-cover', async (_: any, gameId: number, iconPat
       }
     }
     
-    // 如果有默认URL，下载并缓存
+    // 如果有默认URL但是网络URL，跳过下载，返回空字符串让前端使用默认封面
     if (defaultUrl && defaultUrl.startsWith('http')) {
-      logger.info(`[Non-Steam Cover] 下载默认封面: ${defaultUrl}`);
-      return await cacheCover(gameId, defaultUrl);
+      logger.info(`[Non-Steam Cover] 跳过网络默认封面下载，使用本地默认封面: ${defaultUrl}`);
+      return '';
     }
     
-    // 返回默认URL或图标路径
-    return iconPath || defaultUrl || '';
+    // 返回图标路径或空字符串（让前端使用默认封面）
+    return iconPath || '';
   } catch (error) {
     logger.error('Error getting non-steam game cover:', error);
     return iconPath || defaultUrl || '';
