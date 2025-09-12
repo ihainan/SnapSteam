@@ -446,11 +446,14 @@ const App: React.FC = () => {
                   elevation: 3,
                   sx: {
                     minWidth: '200px',
+                    maxHeight: '400px',
                     mt: 1,
                     '& .MuiList-root': {
                       py: 0.5,
+                      maxHeight: '360px',
+                      overflowY: 'auto',
                     },
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                     '& .MuiAvatar-root': {
                       width: 32,
