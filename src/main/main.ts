@@ -231,7 +231,7 @@ class BinaryVDFParser {
       case 'AppName':
         shortcut.appName = value;
         break;
-      case 'exe':
+      case 'Exe':
         shortcut.exe = value;
         break;
       case 'StartDir':
@@ -856,14 +856,27 @@ ipcMain.handle('get-non-steam-games', async (_: any, userId: number) => {
 });
 
 // 获取游戏的截图
-ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: number) => {
+ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: number, isNonSteam: boolean = false) => {
   try {
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
-    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
     
-    logger.info('Looking for screenshots in:', screenshotsPath);
+    // 根据游戏类型计算实际的截图目录 AppID
+    let screenshotAppId: number | string = gameId;
+    if (isNonSteam) {
+      // 对非 Steam 游戏应用 64 位转换: (32位AppID << 32) | 0x02000000
+      // 需要先转换为无符号32位整数
+      const unsignedGameId = gameId >>> 0; // 无符号右移转换
+      const bigIntAppId = (BigInt(unsignedGameId) << BigInt(32)) | BigInt(0x02000000);
+      screenshotAppId = bigIntAppId.toString();
+    }
+    
+    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', screenshotAppId.toString(), 'screenshots');
+    
+    logger.info(`[Screenshots] Loading screenshots for ${isNonSteam ? 'Non-Steam' : 'Steam'} game ${gameId}`);
+    logger.info(`[Screenshots] Screenshot AppID: ${screenshotAppId}`);
+    logger.info(`[Screenshots] Looking for screenshots in: ${screenshotsPath}`);
     
     if (!fs.existsSync(screenshotsPath)) {
       logger.info('Screenshots directory does not exist');
@@ -903,15 +916,27 @@ ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: nu
 });
 
 // 修改导入图片到 Steam 目录的函数
-ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: { gameId: number, userId: number, files: string[] }) => {
+ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files, isNonSteam }: { gameId: number, userId: number, files: string[], isNonSteam?: boolean }) => {
   try {
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
     logger.info('Steam path:', resolvedPath);
     
-    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
+    // 根据游戏类型计算实际的截图目录 AppID
+    let screenshotAppId: number | string = gameId;
+    if (isNonSteam) {
+      // 对非 Steam 游戏应用 64 位转换: (32位AppID << 32) | 0x02000000
+      // 需要先转换为无符号32位整数
+      const unsignedGameId = gameId >>> 0; // 无符号右移转换
+      const bigIntAppId = (BigInt(unsignedGameId) << BigInt(32)) | BigInt(0x02000000);
+      screenshotAppId = bigIntAppId.toString();
+    }
+    
+    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', screenshotAppId.toString(), 'screenshots');
     const thumbnailsPath = path.join(screenshotsPath, 'thumbnails');
+    logger.info(`[Import] Importing screenshots for ${isNonSteam ? 'Non-Steam' : 'Steam'} game ${gameId}`);
+    logger.info(`[Import] Screenshot AppID: ${screenshotAppId}`);
     logger.info('Screenshots path:', screenshotsPath);
     logger.info('Thumbnails path:', thumbnailsPath);
     

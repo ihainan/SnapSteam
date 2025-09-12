@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Card, CardMedia, Typography, styled, Fab, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, Card, CardMedia, Typography, styled, Fab } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate } from 'react-router-dom';
@@ -46,6 +46,47 @@ interface FavoriteButtonProps {
   favorite: string;
 }
 
+const DefaultGameCover = styled(Box)(({ theme }) => ({
+  width: '100%',
+  height: '120px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(1px)',
+  }
+}));
+
+const DefaultGameTitle = styled(Typography)(() => ({
+  position: 'relative',
+  zIndex: 1,
+  color: '#ffffff',
+  fontSize: '14px',
+  fontWeight: 600,
+  textAlign: 'center',
+  textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+  padding: '0 12px',
+  lineHeight: 1.2,
+  maxWidth: '100%',
+  wordBreak: 'break-word',
+  display: '-webkit-box',
+  '-webkit-line-clamp': 3,
+  '-webkit-box-orient': 'vertical',
+  overflow: 'hidden',
+}));
+
 const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
   position: 'absolute',
   top: 8,
@@ -70,30 +111,6 @@ const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
   },
 }));
 
-const NonSteamBadge = styled(Box)(({ theme }) => ({
-  position: 'absolute',
-  top: 8,
-  left: 8,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '4px 8px',
-  borderRadius: '4px',
-  backdropFilter: 'blur(8px)',
-  backgroundColor: 'rgba(255, 152, 0, 0.15)',
-  border: '1px solid rgba(255, 152, 0, 0.3)',
-  color: '#ff9800',
-  fontSize: '10px',
-  fontWeight: 600,
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  opacity: 0.9,
-  transition: 'all 0.2s ease',
-  '&:hover': {
-    opacity: 1,
-    backgroundColor: 'rgba(255, 152, 0, 0.25)',
-  },
-}));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
@@ -177,36 +194,6 @@ const RefreshButton = styled(Fab)(({ theme }) => ({
   },
 }));
 
-const FilterContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'center',
-  marginBottom: '20px',
-  padding: '0 8px',
-}));
-
-const StyledToggleButtonGroup = styled(ToggleButtonGroup)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
-  borderRadius: '8px',
-  border: `1px solid ${theme.palette.divider}`,
-  '& .MuiToggleButton-root': {
-    color: theme.palette.text.secondary,
-    border: 'none',
-    padding: '8px 16px',
-    fontSize: '14px',
-    fontWeight: 500,
-    textTransform: 'none',
-    '&.Mui-selected': {
-      backgroundColor: theme.palette.primary.main,
-      color: '#ffffff',
-      '&:hover': {
-        backgroundColor: theme.palette.primary.dark,
-      },
-    },
-    '&:hover': {
-      backgroundColor: theme.palette.action.hover,
-    },
-  },
-}));
 
 interface Game {
   id: number;
@@ -229,18 +216,11 @@ interface LibraryProps {
 const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const [gameFilter, setGameFilter] = useState<string>('all');
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   
   const t = translations[language];
   
-  // 根据游戏类型过滤器过滤游戏
-  const typeFilteredGames = games.filter(game => {
-    if (gameFilter === 'steam') return !game.isNonSteam;
-    if (gameFilter === 'nonsteam') return game.isNonSteam;
-    return true; // 'all'
-  });
-  
-  const filteredGames = typeFilteredGames.filter(game => 
+  const filteredGames = games.filter(game => 
     game.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
@@ -288,10 +268,9 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
     }
   };
 
-  const handleFilterChange = (_: React.MouseEvent<HTMLElement>, newFilter: string | null) => {
-    if (newFilter !== null) {
-      setGameFilter(newFilter);
-    }
+
+  const handleImageError = (gameId: number) => {
+    setFailedImages(prev => new Set(prev).add(gameId));
   };
 
   const handleRefreshGames = async () => {
@@ -371,18 +350,20 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
 
   const renderGameCard = (game: typeof games[0]) => (
     <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
-      <CardMedia
-        component="img"
-        height="120"
-        image={game.cachedCoverUrl || game.coverUrl}
-        alt={game.name}
-      />
-      <GameTitle>{game.name}</GameTitle>
-      {game.isNonSteam && (
-        <NonSteamBadge>
-          {t.library.nonSteamBadge}
-        </NonSteamBadge>
+      {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) ? (
+        <DefaultGameCover>
+          <DefaultGameTitle>{game.name}</DefaultGameTitle>
+        </DefaultGameCover>
+      ) : (
+        <CardMedia
+          component="img"
+          height="120"
+          image={game.cachedCoverUrl || game.coverUrl}
+          alt={game.name}
+          onError={() => handleImageError(game.id)}
+        />
       )}
+      <GameTitle>{game.name}</GameTitle>
       <FavoriteButton
         favorite={game.favorite.toString()}
         onClick={(e) => handleFavoriteClick(e, game.id)}
@@ -394,23 +375,6 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
 
   return (
     <Box>
-      <FilterContainer>
-        <StyledToggleButtonGroup
-          value={gameFilter}
-          exclusive
-          onChange={handleFilterChange}
-        >
-          <ToggleButton value="all">
-            {t.library.filterAll}
-          </ToggleButton>
-          <ToggleButton value="steam">
-            {t.library.filterSteam}
-          </ToggleButton>
-          <ToggleButton value="nonsteam">
-            {t.library.filterNonSteam}
-          </ToggleButton>
-        </StyledToggleButtonGroup>
-      </FilterContainer>
 
       {recentlyPlayed.length > 0 && (
         <Section>
@@ -418,18 +382,20 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
           <GamesGrid>
             {recentlyPlayed.map(game => (
               <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
-                <CardMedia
-                  component="img"
-                  height="120"
-                  image={game.cachedCoverUrl || game.coverUrl}
-                  alt={game.name}
-                />
-                <GameTitle>{game.name}</GameTitle>
-                {game.isNonSteam && (
-                  <NonSteamBadge>
-                    {t.library.nonSteamBadge}
-                  </NonSteamBadge>
+                {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) ? (
+                  <DefaultGameCover>
+                    <DefaultGameTitle>{game.name}</DefaultGameTitle>
+                  </DefaultGameCover>
+                ) : (
+                  <CardMedia
+                    component="img"
+                    height="120"
+                    image={game.cachedCoverUrl || game.coverUrl}
+                    alt={game.name}
+                    onError={() => handleImageError(game.id)}
+                  />
                 )}
+                <GameTitle>{game.name}</GameTitle>
                 <FavoriteButton
                   favorite={game.favorite.toString()}
                   onClick={(e) => handleFavoriteClick(e, game.id)}

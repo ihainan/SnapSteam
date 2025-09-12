@@ -130,9 +130,10 @@ const EmptyStateIcon = styled(PhotoLibraryIcon)(({ theme }) => ({
 interface ScreenshotManagerProps {
   gameId: number;
   gameName: string;
+  isNonSteam?: boolean;
 }
 
-const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName }) => {
+const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName, isNonSteam = false }) => {
   const { language } = useLanguage();
   const [screenshots, setScreenshots] = useState<any[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -155,11 +156,11 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
         const userId = await ipcRenderer.invoke('get-store-value', 'currentUserId');
         console.log('Loading screenshots for game:', gameId, 'user:', userId);
         
-        const gameScreenshots = await ipcRenderer.invoke('get-game-screenshots', gameId, userId);
+        const gameScreenshots = await ipcRenderer.invoke('get-game-screenshots', gameId, userId, isNonSteam);
         console.log('Loaded screenshots:', gameScreenshots);
         
         if (gameScreenshots.length === 0) {
-          setError('未找到游戏截图');
+          setError(t.screenshotManager.noScreenshotsFound);
         }
         
         // 按时间倒序排序
@@ -170,7 +171,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
         setScreenshots(sortedScreenshots);
       } catch (error) {
         console.error('Error loading screenshots:', error);
-        setError('加载截图时出错');
+        setError(t.screenshotManager.loadingError);
       } finally {
         setLoading(false);
       }
@@ -206,7 +207,8 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       const importedScreenshots = await ipcRenderer.invoke('import-screenshots', {
         gameId,
         userId,
-        files: tempFiles
+        files: tempFiles,
+        isNonSteam
       });
 
       // 清理临时文件
@@ -227,7 +229,7 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
       }
     } catch (error) {
       console.error('Error importing screenshots:', error);
-      setError('导入截图时出错');
+      setError(t.screenshotManager.importError);
     } finally {
       setIsUploading(false);
       setPendingFiles([]);
@@ -348,10 +350,10 @@ const ScreenshotManager: React.FC<ScreenshotManagerProps> = ({ gameId, gameName 
                 title={
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                      文件名: {screenshot.id}
+                      {t.screenshotManager.fileName}: {screenshot.id}
                     </Typography>
                     <Typography variant="body2">
-                      创建时间: {formatDate(screenshot.timestamp)}
+                      {t.screenshotManager.createdTime}: {formatDate(screenshot.timestamp)}
                     </Typography>
                   </Box>
                 }

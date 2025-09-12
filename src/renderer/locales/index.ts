@@ -79,7 +79,12 @@ export const translations = {
       confirm: '确定',
       restartNow: '现在重启 Steam',
       restartLater: '稍后自行重启',
-      importSuccess: '截图已成功导入！需要重启 Steam 客户端才能使截图在 Steam 中显示。\n\n请注意：重启 Steam 将关闭所有正在运行的游戏和应用程序，请确保已保存所有进度。'
+      importSuccess: '截图已成功导入！需要重启 Steam 客户端才能使截图在 Steam 中显示。\n\n请注意：重启 Steam 将关闭所有正在运行的游戏和应用程序，请确保已保存所有进度。',
+      noScreenshotsFound: '未找到游戏截图',
+      loadingError: '加载截图时出错',
+      importError: '导入截图时出错',
+      fileName: '文件名',
+      createdTime: '创建时间'
     }
   },
   en: {
@@ -162,7 +167,12 @@ export const translations = {
       confirm: 'Confirm',
       restartNow: 'Restart Steam Now',
       restartLater: 'Restart Later',
-      importSuccess: 'Screenshots imported successfully! You need to restart Steam client to see the screenshots in Steam.\n\nNote: Restarting Steam will close all running games and applications. Please make sure you have saved all progress.'
+      importSuccess: 'Screenshots imported successfully! You need to restart Steam client to see the screenshots in Steam.\n\nNote: Restarting Steam will close all running games and applications. Please make sure you have saved all progress.',
+      noScreenshotsFound: 'No screenshots found for this game',
+      loadingError: 'Error loading screenshots',
+      importError: 'Error importing screenshots',
+      fileName: 'File Name',
+      createdTime: 'Created Time'
     }
   }
 }; 
