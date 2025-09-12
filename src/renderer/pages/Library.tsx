@@ -27,6 +27,13 @@ const GameCard = styled(Card)(({ theme }) => ({
       filter: 'brightness(1.05)',
     },
   },
+  '& .MuiCardMedia-root': {
+    objectFit: 'contain', // 保持宽高比，完整显示图片
+    width: '100%',
+    height: 'auto',
+    minHeight: '120px',
+    backgroundColor: theme.palette.background.default,
+  },
 }));
 
 const GameTitle = styled(Typography)(() => ({
@@ -45,6 +52,47 @@ const GameTitle = styled(Typography)(() => ({
 interface FavoriteButtonProps {
   favorite: string;
 }
+
+const DefaultGameCover = styled(Box)(({ theme }) => ({
+  width: '100%',
+  height: '120px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: theme.palette.mode === 'dark'
+    ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+  position: 'relative',
+  overflow: 'hidden',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(255, 255, 255, 0.1)',
+    backdropFilter: 'blur(1px)',
+  }
+}));
+
+const DefaultGameTitle = styled(Typography)(() => ({
+  position: 'relative',
+  zIndex: 1,
+  color: '#ffffff',
+  fontSize: '14px',
+  fontWeight: 600,
+  textAlign: 'center',
+  textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+  padding: '0 12px',
+  lineHeight: 1.2,
+  maxWidth: '100%',
+  wordBreak: 'break-word',
+  display: '-webkit-box',
+  '-webkit-line-clamp': 3,
+  '-webkit-box-orient': 'vertical',
+  overflow: 'hidden',
+}));
 
 const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
   position: 'absolute',
@@ -69,6 +117,7 @@ const FavoriteButton = styled(Box)<FavoriteButtonProps>(({ favorite }) => ({
     transform: 'scale(1.05)',
   },
 }));
+
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.primary,
@@ -152,6 +201,7 @@ const RefreshButton = styled(Fab)(({ theme }) => ({
   },
 }));
 
+
 interface Game {
   id: number;
   name: string;
@@ -160,6 +210,8 @@ interface Game {
   userId: number;
   lastPlayed?: number;
   cachedCoverUrl?: string;
+  isNonSteam?: boolean;
+  exePath?: string;
 }
 
 interface LibraryProps {
@@ -171,6 +223,7 @@ interface LibraryProps {
 const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
   const navigate = useNavigate();
   const { language } = useLanguage();
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   
   const t = translations[language];
   
@@ -222,25 +275,49 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
     }
   };
 
+
+  const handleImageError = (gameId: number) => {
+    setFailedImages(prev => new Set(prev).add(gameId));
+  };
+
   const handleRefreshGames = async () => {
     const userId = games[0]?.userId;
     if (userId) {
-      // 从 Steam 获取最新的游戏库数据
-      const userGames = await ipcRenderer.invoke('get-user-games', userId);
-      
-      // 从持久化存储中获取收藏状态
-      const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${userId}`);
-      
-      if (savedGames && Array.isArray(savedGames)) {
-        // 合并 Steam 游戏数据和保存的收藏状态
-        const mergedGames = userGames.map((game: Game) => {
-          const savedGame = savedGames.find((g: Game) => g.id === game.id);
-          return savedGame ? { ...game, favorite: savedGame.favorite } : game;
-        });
+      try {
+        // 从 Steam 获取最新的游戏库数据
+        const userGames = await ipcRenderer.invoke('get-user-games', userId);
         
-        setGames(mergedGames);
-      } else {
-        setGames(userGames);
+        // 获取 Non-Steam 游戏数据
+        let nonSteamGames = [];
+        try {
+          nonSteamGames = await ipcRenderer.invoke('get-non-steam-games', userId);
+          console.log(`刷新成功加载 ${nonSteamGames.length} 个Non-Steam游戏`);
+        } catch (nonSteamError) {
+          console.warn('刷新Non-Steam游戏失败:', nonSteamError);
+          // 保留现有的Non-Steam游戏
+          nonSteamGames = games.filter(game => game.isNonSteam);
+        }
+        
+        // 合并 Steam 游戏和 Non-Steam 游戏
+        const allGames = [...userGames, ...nonSteamGames];
+        
+        // 从持久化存储中获取收藏状态
+        const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${userId}`);
+        
+        if (savedGames && Array.isArray(savedGames)) {
+          // 合并游戏数据和保存的收藏状态
+          const mergedGames = allGames.map((game: Game) => {
+            const savedGame = savedGames.find((g: Game) => g.id === game.id);
+            return savedGame ? { ...game, favorite: savedGame.favorite } : game;
+          });
+          
+          setGames(mergedGames);
+        } else {
+          setGames(allGames);
+        }
+      } catch (error) {
+        console.error('刷新游戏库时出错:', error);
+        // 刷新失败时保持现有状态
       }
     }
   };
@@ -248,7 +325,17 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
   // 异步加载游戏封面
   const loadGameCover = async (game: Game) => {
     try {
-      const cachedCoverUrl = await ipcRenderer.invoke('get-game-cover', game.id, game.coverUrl);
+      let cachedCoverUrl;
+      
+      if (game.isNonSteam) {
+        // 对于Non-Steam游戏，使用专门的封面处理函数
+        const iconPath = game.exePath ? game.exePath.replace(/[^/\\]*$/, '') + 'icon.ico' : undefined;
+        cachedCoverUrl = await ipcRenderer.invoke('get-nonsteam-game-cover', game.id, game.userId, iconPath, game.coverUrl);
+      } else {
+        // 对于Steam游戏，使用标准的封面处理函数
+        cachedCoverUrl = await ipcRenderer.invoke('get-game-cover', game.id, game.coverUrl);
+      }
+      
       setGames(prevGames => 
         prevGames.map(g => 
           g.id === game.id ? { ...g, cachedCoverUrl } : g
@@ -270,12 +357,18 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
 
   const renderGameCard = (game: typeof games[0]) => (
     <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
-      <CardMedia
-        component="img"
-        height="120"
-        image={game.cachedCoverUrl || game.coverUrl}
-        alt={game.name}
-      />
+      {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) || (game.isNonSteam && !game.cachedCoverUrl) ? (
+        <DefaultGameCover>
+          <DefaultGameTitle>{game.name}</DefaultGameTitle>
+        </DefaultGameCover>
+      ) : (
+        <CardMedia
+          component="img"
+          image={game.cachedCoverUrl || game.coverUrl}
+          alt={game.name}
+          onError={() => handleImageError(game.id)}
+        />
+      )}
       <GameTitle>{game.name}</GameTitle>
       <FavoriteButton
         favorite={game.favorite.toString()}
@@ -288,19 +381,32 @@ const Library: React.FC<LibraryProps> = ({ searchTerm, games, setGames }) => {
 
   return (
     <Box>
+
       {recentlyPlayed.length > 0 && (
         <Section>
           <SectionTitle>{t.library.recentlyPlayed}</SectionTitle>
           <GamesGrid>
             {recentlyPlayed.map(game => (
               <GameCard key={game.id} onClick={() => handleGameClick(game.id, game.name)}>
-                <CardMedia
-                  component="img"
-                  height="120"
-                  image={game.cachedCoverUrl || game.coverUrl}
-                  alt={game.name}
-                />
+                {failedImages.has(game.id) || (!game.cachedCoverUrl && !game.coverUrl) || (game.isNonSteam && !game.cachedCoverUrl) ? (
+                  <DefaultGameCover>
+                    <DefaultGameTitle>{game.name}</DefaultGameTitle>
+                  </DefaultGameCover>
+                ) : (
+                  <CardMedia
+                    component="img"
+                    image={game.cachedCoverUrl || game.coverUrl}
+                    alt={game.name}
+                    onError={() => handleImageError(game.id)}
+                  />
+                )}
                 <GameTitle>{game.name}</GameTitle>
+                <FavoriteButton
+                  favorite={game.favorite.toString()}
+                  onClick={(e) => handleFavoriteClick(e, game.id)}
+                >
+                  <FavoriteIcon sx={{ fontSize: 18 }} />
+                </FavoriteButton>
               </GameCard>
             ))}
           </GamesGrid>

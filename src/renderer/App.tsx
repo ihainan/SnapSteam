@@ -40,6 +40,8 @@ interface Game {
   coverUrl: string;
   favorite: boolean;
   userId: number;
+  isNonSteam?: boolean;
+  exePath?: string;
 }
 
 // 自定义搜索框样式
@@ -179,22 +181,41 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadGames = async () => {
       if (currentUser) {
-        // 从 Steam 获取游戏库数据
-        const userGames = await ipcRenderer.invoke('get-user-games', currentUser.id);
-        
-        // 从持久化存储中获取收藏状态
-        const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${currentUser.id}`);
-        
-        if (savedGames && Array.isArray(savedGames)) {
-          // 合并 Steam 游戏数据和保存的收藏状态
-          const mergedGames = userGames.map((game: Game) => {
-            const savedGame = savedGames.find((g: Game) => g.id === game.id);
-            return savedGame ? { ...game, favorite: savedGame.favorite } : game;
-          });
+        try {
+          // 从 Steam 获取游戏库数据
+          const userGames = await ipcRenderer.invoke('get-user-games', currentUser.id);
           
-          setGames(mergedGames);
-        } else {
-          setGames(userGames);
+          // 获取 Non-Steam 游戏数据
+          let nonSteamGames = [];
+          try {
+            nonSteamGames = await ipcRenderer.invoke('get-non-steam-games', currentUser.id);
+            console.log(`成功加载 ${nonSteamGames.length} 个Non-Steam游戏`);
+          } catch (nonSteamError) {
+            console.warn('加载Non-Steam游戏失败:', nonSteamError);
+            // 即使Non-Steam游戏加载失败，我们仍然可以显示Steam游戏
+          }
+          
+          // 合并 Steam 游戏和 Non-Steam 游戏
+          const allGames = [...userGames, ...nonSteamGames];
+          
+          // 从持久化存储中获取收藏状态
+          const savedGames = await ipcRenderer.invoke('get-store-value', `userGames_${currentUser.id}`);
+          
+          if (savedGames && Array.isArray(savedGames)) {
+            // 合并游戏数据和保存的收藏状态
+            const mergedGames = allGames.map((game: Game) => {
+              const savedGame = savedGames.find((g: Game) => g.id === game.id);
+              return savedGame ? { ...game, favorite: savedGame.favorite } : game;
+            });
+            
+            setGames(mergedGames);
+          } else {
+            setGames(allGames);
+          }
+        } catch (error) {
+          console.error('加载游戏库时出错:', error);
+          // 如果完全失败，至少设置空数组避免UI错误
+          setGames([]);
         }
       }
     };
@@ -425,11 +446,14 @@ const App: React.FC = () => {
                   elevation: 3,
                   sx: {
                     minWidth: '200px',
+                    maxHeight: '400px',
                     mt: 1,
                     '& .MuiList-root': {
                       py: 0.5,
+                      maxHeight: '360px',
+                      overflowY: 'auto',
                     },
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
                     '& .MuiAvatar-root': {
                       width: 32,

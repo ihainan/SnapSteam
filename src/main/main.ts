@@ -10,6 +10,281 @@ const axios = require('axios');
 const { createHash } = require('crypto');
 const logger = require('./logger').default;
 
+// CRC32算法实现
+function computeCRC32(data: Buffer): number {
+  const polynomial = 0xEDB88320;
+  const table = new Array(256);
+  
+  // 构建CRC表
+  for (let i = 0; i < 256; i++) {
+    let temp = i;
+    for (let j = 0; j < 8; j++) {
+      temp = (temp & 1) === 1 ? (polynomial ^ (temp >>> 1)) : (temp >>> 1);
+    }
+    table[i] = temp;
+  }
+  
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < data.length; i++) {
+    const index = (crc & 0xFF) ^ data[i];
+    crc = (crc >>> 8) ^ table[index];
+  }
+  
+  return (~crc) >>> 0;
+}
+
+// 生成Non-Steam游戏的AppID
+function generateNonSteamAppId(appName: string, exe: string): number {
+  const combined = appName + exe + '\0';
+  const data = Buffer.from(combined, 'utf8');
+  const crc = computeCRC32(data);
+  return (crc | 0x80000000) >>> 0;
+}
+
+// Binary VDF解析器
+class BinaryVDFParser {
+  private buffer: Buffer;
+  private position: number = 0;
+  
+  constructor(buffer: Buffer) {
+    this.buffer = buffer;
+  }
+  
+  readByte(): number {
+    if (this.position >= this.buffer.length) {
+      throw new Error('Buffer overflow');
+    }
+    return this.buffer[this.position++];
+  }
+  
+  readInt32(): number {
+    if (this.position + 4 > this.buffer.length) {
+      throw new Error('Buffer overflow');
+    }
+    const value = this.buffer.readInt32LE(this.position);
+    this.position += 4;
+    return value;
+  }
+  
+  readNullTerminatedString(): string {
+    const start = this.position;
+    while (this.position < this.buffer.length && this.buffer[this.position] !== 0) {
+      this.position++;
+    }
+    const str = this.buffer.slice(start, this.position).toString('utf8');
+    if (this.position < this.buffer.length) {
+      this.position++; // 跳过null终止符
+    }
+    return str;
+  }
+  
+  parseShortcuts(): NonSteamGame[] {
+    const shortcuts: NonSteamGame[] = [];
+    
+    try {
+      // 读取根节点
+      const rootType = this.readByte();
+      const rootKey = this.readNullTerminatedString();
+      
+      if (rootType !== 0x00 || rootKey !== 'shortcuts') {
+        logger.warn('Invalid VDF root key or type');
+        return [];
+      }
+      
+      // 读取shortcuts
+      while (this.position < this.buffer.length) {
+        const type = this.readByte();
+        if (type === 0x08) break; // 结束标记
+        
+        if (type !== 0x00) {
+          logger.warn(`Expected dictionary key (0x00), got 0x${type.toString(16)}`);
+          break;
+        }
+        
+        const index = this.readNullTerminatedString();
+        const shortcut = this.parseShortcut();
+        if (shortcut) {
+          shortcuts.push(shortcut);
+        }
+      }
+    } catch (error) {
+      logger.error('Error parsing VDF shortcuts:', error);
+    }
+    
+    return shortcuts;
+  }
+  
+  private parseShortcut(): NonSteamGame | null {
+    const shortcut: Partial<NonSteamGame> = {};
+    
+    try {
+      while (this.position < this.buffer.length) {
+        const type = this.readByte();
+        if (type === 0x08) break; // 结束标记
+        
+        const key = this.readNullTerminatedString();
+        
+        switch (type) {
+          case 0x00: // 嵌套字典
+            if (key === 'tags') {
+              shortcut.tags = this.parseTags();
+            } else {
+              this.skipDictionary();
+            }
+            break;
+          case 0x01: // 字符串
+            const strValue = this.readNullTerminatedString();
+            this.assignStringValue(shortcut, key, strValue);
+            break;
+          case 0x02: // 整数
+            const intValue = this.readInt32();
+            this.assignIntValue(shortcut, key, intValue);
+            break;
+          default:
+            logger.warn(`Unknown VDF type: 0x${type.toString(16)} for key: ${key}`);
+            break;
+        }
+      }
+      
+      // 验证必需字段
+      if (shortcut.appName && shortcut.exe) {
+        const appId = shortcut.appId || generateNonSteamAppId(shortcut.appName, shortcut.exe);
+        logger.info(`[VDF Parser] 成功解析游戏: ${shortcut.appName} (${appId})`);
+        return {
+          appId,
+          appName: shortcut.appName,
+          exe: shortcut.exe,
+          startDir: shortcut.startDir || '',
+          icon: shortcut.icon || '',
+          shortcutPath: shortcut.shortcutPath || '',
+          launchOptions: shortcut.launchOptions || '',
+          isHidden: shortcut.isHidden || false,
+          allowDesktopConfig: shortcut.allowDesktopConfig || false,
+          allowOverlay: shortcut.allowOverlay || false,
+          openVR: shortcut.openVR || false,
+          devkit: shortcut.devkit || false,
+          devkitGameID: shortcut.devkitGameID || '',
+          devkitOverrideAppID: shortcut.devkitOverrideAppID || 0,
+          lastPlayTime: shortcut.lastPlayTime || 0,
+          flatpakAppID: shortcut.flatpakAppID || '',
+          tags: shortcut.tags || []
+        } as NonSteamGame;
+      } else {
+        logger.warn(`[VDF Parser] 跳过无效游戏条目 - AppName: ${shortcut.appName}, Exe: ${shortcut.exe}`);
+      }
+    } catch (error) {
+      logger.error('[VDF Parser] 解析游戏快捷方式时出错:', error);
+    }
+    
+    return null;
+  }
+  
+  private parseTags(): string[] {
+    const tags: string[] = [];
+    
+    try {
+      while (this.position < this.buffer.length) {
+        const type = this.readByte();
+        if (type === 0x08) break; // 结束标记
+        
+        const key = this.readNullTerminatedString();
+        
+        if (type === 0x01) {
+          const value = this.readNullTerminatedString();
+          tags.push(value);
+        }
+      }
+    } catch (error) {
+      logger.error('Error parsing tags:', error);
+    }
+    
+    return tags;
+  }
+  
+  private skipDictionary(): void {
+    try {
+      while (this.position < this.buffer.length) {
+        const type = this.readByte();
+        if (type === 0x08) break; // 结束标记
+        
+        const key = this.readNullTerminatedString();
+        
+        switch (type) {
+          case 0x00:
+            this.skipDictionary();
+            break;
+          case 0x01:
+            this.readNullTerminatedString();
+            break;
+          case 0x02:
+            this.readInt32();
+            break;
+        }
+      }
+    } catch (error) {
+      logger.error('Error skipping dictionary:', error);
+    }
+  }
+  
+  private assignStringValue(shortcut: Partial<NonSteamGame>, key: string, value: string): void {
+    switch (key) {
+      case 'AppName':
+        shortcut.appName = value;
+        break;
+      case 'Exe':
+        shortcut.exe = value;
+        break;
+      case 'StartDir':
+        shortcut.startDir = value;
+        break;
+      case 'icon':
+        shortcut.icon = value;
+        break;
+      case 'ShortcutPath':
+        shortcut.shortcutPath = value;
+        break;
+      case 'LaunchOptions':
+        shortcut.launchOptions = value;
+        break;
+      case 'DevkitGameID':
+        shortcut.devkitGameID = value;
+        break;
+      case 'FlatpakAppID':
+        shortcut.flatpakAppID = value;
+        break;
+    }
+  }
+  
+  private assignIntValue(shortcut: Partial<NonSteamGame>, key: string, value: number): void {
+    switch (key) {
+      case 'appid':
+        shortcut.appId = value;
+        break;
+      case 'IsHidden':
+        shortcut.isHidden = value !== 0;
+        break;
+      case 'AllowDesktopConfig':
+        shortcut.allowDesktopConfig = value !== 0;
+        break;
+      case 'AllowOverlay':
+        shortcut.allowOverlay = value !== 0;
+        break;
+      case 'OpenVR':
+        shortcut.openVR = value !== 0;
+        break;
+      case 'Devkit':
+        shortcut.devkit = value !== 0;
+        break;
+      case 'DevkitOverrideAppID':
+        shortcut.devkitOverrideAppID = value;
+        break;
+      case 'LastPlayTime':
+        shortcut.lastPlayTime = value;
+        break;
+    }
+  }
+}
+
 interface AppSettings {
   themeMode: 'light' | 'dark' | 'system';
   language: 'zh' | 'en';
@@ -38,6 +313,28 @@ interface Game {
   favorite: boolean;
   userId: number;
   lastPlayed?: number;  // 添加最后游玩时间字段
+  isNonSteam?: boolean;  // 标识是否为Non-Steam游戏
+  exePath?: string;      // Non-Steam游戏的exe路径
+}
+
+interface NonSteamGame {
+  appId: number;
+  appName: string;
+  exe: string;
+  startDir: string;
+  icon: string;
+  shortcutPath: string;
+  launchOptions: string;
+  isHidden: boolean;
+  allowDesktopConfig: boolean;
+  allowOverlay: boolean;
+  openVR: boolean;
+  devkit: boolean;
+  devkitGameID: string;
+  devkitOverrideAppID: number;
+  lastPlayTime: number;
+  flatpakAppID: string;
+  tags: string[];
 }
 
 interface RenderProcessGoneDetails {
@@ -455,15 +752,160 @@ ipcMain.handle('get-user-games', async (_: any, userId: number) => {
   }
 });
 
+// 获取用户的Non-Steam游戏
+ipcMain.handle('get-non-steam-games', async (_: any, userId: number) => {
+  try {
+    const steamPath = store.get('steamPath') as string;
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    const shortcutsPath = path.join(resolvedPath, 'userdata', userId.toString(), 'config', 'shortcuts.vdf');
+    
+    logger.info(`[Non-Steam Games] 开始加载用户 ${userId} 的Non-Steam游戏，路径: ${shortcutsPath}`);
+    
+    if (!fs.existsSync(shortcutsPath)) {
+      logger.info(`[Non-Steam Games] shortcuts.vdf文件不存在: ${shortcutsPath}`);
+      return [];
+    }
+    
+    const buffer = fs.readFileSync(shortcutsPath);
+    if (buffer.length === 0) {
+      logger.info(`[Non-Steam Games] shortcuts.vdf文件为空`);
+      return [];
+    }
+    
+    const parser = new BinaryVDFParser(buffer);
+    const shortcuts = parser.parseShortcuts();
+    
+    logger.info(`[Non-Steam Games] 解析到 ${shortcuts.length} 个Non-Steam游戏`);
+    
+    const games: Game[] = [];
+    
+    for (const shortcut of shortcuts) {
+      if (shortcut.isHidden) {
+        logger.info(`[Non-Steam Games] 跳过隐藏游戏: ${shortcut.appName}`);
+        continue;
+      }
+      
+      // 检查exe文件是否存在
+      let exeExists = false;
+      try {
+        // 移除可能的引号
+        const cleanExe = shortcut.exe.replace(/^"(.*)"$/, '$1');
+        exeExists = fs.existsSync(cleanExe);
+      } catch (error) {
+        logger.warn(`[Non-Steam Games] 检查exe文件失败: ${shortcut.exe}`, error);
+      }
+      
+      if (!exeExists) {
+        logger.info(`[Non-Steam Games] 跳过不存在的exe文件: ${shortcut.exe}`);
+        continue;
+      }
+      
+      // 处理封面图片
+      let coverUrl = '';
+      let cachedCoverUrl: string | undefined = undefined;
+      
+      // 首先检查 Steam grid 目录中的自定义封面（最高优先级）
+      const gridPath = path.join(resolvedPath, 'userdata', userId.toString(), 'config', 'grid');
+      
+      // 对于Non-Steam游戏，需要转换为无符号ID用于grid文件名
+      const unsignedAppId = shortcut.appId >>> 0;
+      
+      const customCoverFiles = [
+        // 使用无符号ID的各种格式
+        `${unsignedAppId}p.png`,                    // Steam常用格式 (portrait)
+        `${unsignedAppId}.jpg`,                     // 通用JPG
+        `${unsignedAppId}.png`,                     // 通用PNG
+        `${unsignedAppId}_library_600x900.jpg`,    // 竖版封面
+        `${unsignedAppId}_header.jpg`,             // 横版封面
+        `${unsignedAppId}_library_600x900.png`,   // 竖版PNG
+        `${unsignedAppId}_header.png`              // 横版PNG
+      ];
+      
+      for (const coverFile of customCoverFiles) {
+        const coverPath = path.join(gridPath, coverFile);
+        if (fs.existsSync(coverPath)) {
+          try {
+            fs.accessSync(coverPath, fs.constants.R_OK);
+            coverUrl = `file://${coverPath}`;
+            logger.info(`[Non-Steam Games] 使用 Steam grid 自定义封面: ${coverPath}`);
+            break;
+          } catch (error) {
+            logger.warn(`[Non-Steam Games] 无法读取 grid 封面文件: ${coverPath}`, error);
+          }
+        }
+      }
+      
+      // 如果没找到 grid 封面，检查是否有自定义图标
+      if (!coverUrl && shortcut.icon && fs.existsSync(shortcut.icon)) {
+        try {
+          // 验证图标文件是否可读
+          fs.accessSync(shortcut.icon, fs.constants.R_OK);
+          coverUrl = `file://${shortcut.icon}`;
+          logger.info(`[Non-Steam Games] 使用自定义图标: ${shortcut.icon}`);
+        } catch (error) {
+          logger.warn(`[Non-Steam Games] 无法读取图标文件: ${shortcut.icon}`, error);
+        }
+      }
+      
+      // 检查是否有缓存的封面
+      const cachedCoverPath = getCachedCoverPath(shortcut.appId);
+      const isCached = fs.existsSync(cachedCoverPath);
+      if (isCached) {
+        cachedCoverUrl = `file://${cachedCoverPath}`;
+        logger.info(`[Non-Steam Games] 找到缓存封面: ${cachedCoverPath}`);
+      }
+      
+      // 如果没有找到任何本地封面，设置为空字符串
+      // 实际的封面加载将由前端按需通过 get-nonsteam-game-cover 处理
+      if (!coverUrl && !cachedCoverUrl) {
+        coverUrl = ''; // 不在这里生成网络URL，避免不必要的网络请求
+      }
+      
+      logger.info(`[Non-Steam Games] 添加游戏: ${shortcut.appName} (${shortcut.appId})`);
+      
+      games.push({
+        id: shortcut.appId,
+        name: shortcut.appName,
+        coverUrl,
+        cachedCoverUrl,
+        favorite: false, // Non-Steam游戏的收藏状态需要单独处理
+        userId,
+        lastPlayed: shortcut.lastPlayTime,
+        isNonSteam: true,
+        exePath: shortcut.exe
+      });
+    }
+    
+    logger.info(`[Non-Steam Games] 成功加载用户 ${userId} 的Non-Steam游戏库，共 ${games.length} 个游戏`);
+    return games;
+  } catch (error) {
+    logger.error('Error getting non-steam games:', error);
+    return [];
+  }
+});
+
 // 获取游戏的截图
-ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: number) => {
+ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: number, isNonSteam: boolean = false) => {
   try {
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
-    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
     
-    logger.info('Looking for screenshots in:', screenshotsPath);
+    // 根据游戏类型计算实际的截图目录 AppID
+    let screenshotAppId: number | string = gameId;
+    if (isNonSteam) {
+      // 对非 Steam 游戏应用 64 位转换: (32位AppID << 32) | 0x02000000
+      // 需要先转换为无符号32位整数
+      const unsignedGameId = gameId >>> 0; // 无符号右移转换
+      const bigIntAppId = (BigInt(unsignedGameId) << BigInt(32)) | BigInt(0x02000000);
+      screenshotAppId = bigIntAppId.toString();
+    }
+    
+    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', screenshotAppId.toString(), 'screenshots');
+    
+    logger.info(`[Screenshots] Loading screenshots for ${isNonSteam ? 'Non-Steam' : 'Steam'} game ${gameId}`);
+    logger.info(`[Screenshots] Screenshot AppID: ${screenshotAppId}`);
+    logger.info(`[Screenshots] Looking for screenshots in: ${screenshotsPath}`);
     
     if (!fs.existsSync(screenshotsPath)) {
       logger.info('Screenshots directory does not exist');
@@ -503,15 +945,27 @@ ipcMain.handle('get-game-screenshots', async (_: any, gameId: number, userId: nu
 });
 
 // 修改导入图片到 Steam 目录的函数
-ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files }: { gameId: number, userId: number, files: string[] }) => {
+ipcMain.handle('import-screenshots', async (_: any, { gameId, userId, files, isNonSteam }: { gameId: number, userId: number, files: string[], isNonSteam?: boolean }) => {
   try {
     const steamPath = store.get('steamPath') as string;
     // 解析 ~ 符号为用户的 home 目录
     const resolvedPath = steamPath.replace('~', os.homedir());
     logger.info('Steam path:', resolvedPath);
     
-    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', gameId.toString(), 'screenshots');
+    // 根据游戏类型计算实际的截图目录 AppID
+    let screenshotAppId: number | string = gameId;
+    if (isNonSteam) {
+      // 对非 Steam 游戏应用 64 位转换: (32位AppID << 32) | 0x02000000
+      // 需要先转换为无符号32位整数
+      const unsignedGameId = gameId >>> 0; // 无符号右移转换
+      const bigIntAppId = (BigInt(unsignedGameId) << BigInt(32)) | BigInt(0x02000000);
+      screenshotAppId = bigIntAppId.toString();
+    }
+    
+    const screenshotsPath = path.join(resolvedPath, 'userdata', userId.toString(), '760', 'remote', screenshotAppId.toString(), 'screenshots');
     const thumbnailsPath = path.join(screenshotsPath, 'thumbnails');
+    logger.info(`[Import] Importing screenshots for ${isNonSteam ? 'Non-Steam' : 'Steam'} game ${gameId}`);
+    logger.info(`[Import] Screenshot AppID: ${screenshotAppId}`);
     logger.info('Screenshots path:', screenshotsPath);
     logger.info('Thumbnails path:', thumbnailsPath);
     
@@ -592,7 +1046,9 @@ function getCoverCacheDir() {
 
 // 获取缓存的封面图片路径
 function getCachedCoverPath(gameId: number) {
-  return path.join(getCoverCacheDir(), `${gameId}.jpg`);
+  // 对于Non-Steam游戏，确保使用无符号ID作为文件名
+  const unsignedId = gameId >>> 0;
+  return path.join(getCoverCacheDir(), `${unsignedId}.jpg`);
 }
 
 // 检查封面是否已缓存
@@ -616,6 +1072,62 @@ async function cacheCover(gameId: number, imageUrl: string) {
   }
 }
 
+// 为Non-Steam游戏缓存本地图标文件
+async function cacheLocalIcon(gameId: number, iconPath: string): Promise<string> {
+  try {
+    logger.info(`[Cover Cache] 开始缓存本地图标: ${iconPath}`);
+    const cachePath = getCachedCoverPath(gameId);
+    
+    // 使用Jimp处理图标文件，智能调整尺寸
+    const image = await Jimp.read(iconPath);
+    
+    // 获取原始尺寸
+    const originalWidth = image.bitmap.width;
+    const originalHeight = image.bitmap.height;
+    const originalRatio = originalWidth / originalHeight;
+    const targetRatio = 460 / 215; // Steam 封面比例 ≈ 2.14
+    
+    logger.info(`[Cover Cache] 原始尺寸: ${originalWidth}x${originalHeight}, 比例: ${originalRatio.toFixed(2)}, 目标比例: ${targetRatio.toFixed(2)}`);
+    
+    if (Math.abs(originalRatio - targetRatio) < 0.1) {
+      // 比例接近，直接调整
+      await image
+        .resize(460, 215, Jimp.RESIZE_BEZIER)
+        .quality(90)
+        .writeAsync(cachePath);
+      logger.info(`[Cover Cache] 比例接近，直接调整为 460x215`);
+    } else if (originalRatio < targetRatio) {
+      // 竖版图片（比例小于目标），保持宽高比并从中心截断
+      const scaleFactor = 460 / originalWidth; // 以宽度为准缩放
+      const scaledHeight = originalHeight * scaleFactor;
+      
+      await image
+        .resize(460, scaledHeight, Jimp.RESIZE_BEZIER)
+        .crop(0, (scaledHeight - 215) / 2, 460, 215) // 从中心截断到目标高度
+        .quality(90)
+        .writeAsync(cachePath);
+      logger.info(`[Cover Cache] 竖版图片，缩放到 460x${scaledHeight} 后中心截断为 460x215`);
+    } else {
+      // 横版图片（比例大于目标），保持宽高比并从中心截断
+      const scaleFactor = 215 / originalHeight; // 以高度为准缩放
+      const scaledWidth = originalWidth * scaleFactor;
+      
+      await image
+        .resize(scaledWidth, 215, Jimp.RESIZE_BEZIER)
+        .crop((scaledWidth - 460) / 2, 0, 460, 215) // 从中心截断到目标宽度
+        .quality(90)
+        .writeAsync(cachePath);
+      logger.info(`[Cover Cache] 横版图片，缩放到 ${scaledWidth}x215 后中心截断为 460x215`);
+    }
+    
+    logger.info(`[Cover Cache] 成功缓存本地图标到: ${cachePath}`);
+    return `file://${cachePath}`;
+  } catch (error) {
+    logger.error(`[Cover Cache] 缓存本地图标失败:`, error);
+    return `file://${iconPath}`;
+  }
+}
+
 // 获取游戏封面（优先使用缓存）
 ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string) => {
   try {
@@ -628,6 +1140,72 @@ ipcMain.handle('get-game-cover', async (_: any, gameId: number, coverUrl: string
   } catch (error) {
     logger.error('Error getting game cover:', error);
     return coverUrl;
+  }
+});
+
+// 为Non-Steam游戏处理封面（支持本地图标文件）
+ipcMain.handle('get-nonsteam-game-cover', async (_: any, gameId: number, userId: number, iconPath?: string, defaultUrl?: string) => {
+  try {
+    // 首先检查是否已有缓存
+    if (isCoverCached(gameId)) {
+      logger.info(`[Non-Steam Cover] 从缓存加载游戏 ${gameId} 的封面`);
+      return `file://${getCachedCoverPath(gameId)}`;
+    }
+    
+    // 检查 Steam grid 目录中的自定义封面（最高优先级）
+    const steamPath = store.get('steamPath') as string;
+    const resolvedPath = steamPath.replace('~', os.homedir());
+    const gridPath = path.join(resolvedPath, 'userdata', userId.toString(), 'config', 'grid');
+    
+    // 对于Non-Steam游戏，需要转换为无符号ID用于grid文件名
+    const unsignedGameId = gameId >>> 0;
+    
+    const customCoverFiles = [
+      // 使用无符号ID的各种格式
+      `${unsignedGameId}p.png`,                    // Steam常用格式 (portrait)
+      `${unsignedGameId}.jpg`,                     // 通用JPG
+      `${unsignedGameId}.png`,                     // 通用PNG
+      `${unsignedGameId}_library_600x900.jpg`,    // 竖版封面
+      `${unsignedGameId}_header.jpg`,             // 横版封面
+      `${unsignedGameId}_library_600x900.png`,   // 竖版PNG
+      `${unsignedGameId}_header.png`              // 横版PNG
+    ];
+    
+    for (const coverFile of customCoverFiles) {
+      const coverPath = path.join(gridPath, coverFile);
+      if (fs.existsSync(coverPath)) {
+        try {
+          fs.accessSync(coverPath, fs.constants.R_OK);
+          logger.info(`[Non-Steam Cover] 找到 Steam grid 自定义封面: ${coverPath}`);
+          return await cacheLocalIcon(gameId, coverPath);
+        } catch (error) {
+          logger.warn(`[Non-Steam Cover] 无法读取 grid 封面文件: ${coverPath}`, error);
+        }
+      }
+    }
+    
+    // 如果没找到 grid 封面，检查是否有本地图标路径且文件存在，处理本地图标
+    if (iconPath && fs.existsSync(iconPath)) {
+      try {
+        fs.accessSync(iconPath, fs.constants.R_OK);
+        logger.info(`[Non-Steam Cover] 处理本地图标: ${iconPath}`);
+        return await cacheLocalIcon(gameId, iconPath);
+      } catch (error) {
+        logger.warn(`[Non-Steam Cover] 无法读取图标文件: ${iconPath}`, error);
+      }
+    }
+    
+    // 如果有默认URL但是网络URL，跳过下载，返回空字符串让前端使用默认封面
+    if (defaultUrl && defaultUrl.startsWith('http')) {
+      logger.info(`[Non-Steam Cover] 跳过网络默认封面下载，使用本地默认封面: ${defaultUrl}`);
+      return '';
+    }
+    
+    // 返回图标路径或空字符串（让前端使用默认封面）
+    return iconPath || '';
+  } catch (error) {
+    logger.error('Error getting non-steam game cover:', error);
+    return iconPath || defaultUrl || '';
   }
 });
 
